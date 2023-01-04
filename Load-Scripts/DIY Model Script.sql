@@ -1,4 +1,4 @@
-/*� 2023 Wesley Sanders and Evensun Consulting LLC. This model is provided AS IS 
+/* (c) 2023 Wesley Sanders and Evensun Consulting LLC. This model is provided AS IS 
 with no warranties, express or implied. User uses this code at their own risk. Please read the "Read Me and Disclaimer" document found with this code before running this script.**/
 
 use [RiskAdjustment] --- change this to whatever database you are using
@@ -1591,7 +1591,7 @@ update hc set RXC_07 = 0
 from hcc_list hc 
 where rxc_06 = 1
 
---- interaction factors ---
+--- RXC HCC interaction factors ---
 update hcc_list set
 RXC_01_X_HCC001 = 1
 where rxc_01 = 1 and hhs_hcc001 = 1
@@ -1646,6 +1646,7 @@ where RXC_10 = 1 and (HHS_HCC159 = 1 or HHS_HCC158 = 1)
 
 /*** set enrollment duration factors for 2022 and prior years ***/
 IF @benefityear <= 2022
+--- for 2023, EDF is calculated based on payment HCC count further below ---
 BEGIN
 update hcc_list
 set ed_1 = 1 where
@@ -2060,9 +2061,13 @@ update hcc_list set PREMATURE_MULTIPLES_X_SEVERITY1 = 1 where IHCC_SEVERITY1 = 1
 update hcc_list set TERM_X_SEVERITY1                = 1 where IHCC_SEVERITY1 = 1 and IHCC_TERM                = 1
 update hcc_list set AGE1_X_SEVERITY1                = 1   where IHCC_SEVERITY1 = 1 and IHCC_AGE1                = 1
 
-/***** Apply 2023 Model severity factors and transplant flags ***/
-
+/***** Calculate HCC Counts, Apply 2023 Model severity factors and transplant flags ***/
+/****
+Payment HCC Count is not used in 2022 and prior models, 
+but count is still populated in the hcc_list table as a potentially useful indicator ****/
 if object_id('tempdb..#paymentHCCcount') is not null drop table #paymentHCCcount
+
+--- unpivot and then count distinct by member ID; only Payment HCCs are pulled in
 select mbr_id, metal, age_last, hcc, val, eff_date, exp_date into #paymentHCCcount
 from (
 SELECT [MBR_ID]
@@ -2409,6 +2414,14 @@ update hc set hcc_count = #hCC_COUNT.pmt_hcc_count
 from hcc_list hc  join #hCC_COUNT on hc.mbr_id = #hCC_COUNT.mbr_id
 and age_last >= 2
 
+/* This is the logic that updates the severity flag and severe / interaction HCC beginnig with the 2023 benefit year; skipped if benefit year is 2022 or earlier. 
+
+Assumes payment HCC count logic is applied after hierarchies and groupers are applied. For example, if a member has HCC019 and HCC020, HCC is only counted once (under G01). 
+
+Assumes that RXCs and RXC interaction factors are not counted in payment HCC count for both the severity / transplant flag and the EDF indicator
+
+
+*/
 if @benefityear >= 2023
 BEGIN
 UPDATE HCC_LIST set severe_v3 = 0
@@ -2512,7 +2525,7 @@ and age_last >= 2
 
 END
 
-/***** Unpivot HCC table, join to model factors, produce risk scores *****/
+/***** Unpivot HCC table to create a temp table with each member and all payment HCCs and other variables that affect risk scores. Since every member should have at least a demographic risk score variable, each member should appear at least once in the unpivot table, join to model factors, produce risk scores *****/
 
 if object_id('tempdb..#hcc_unpivot') is not null drop table #hcc_unpivot
 
@@ -3059,8 +3072,12 @@ SELECT [MBR_ID]
       ,[AGE1_X_SEVERITY3]
       ,[AGE1_X_SEVERITY2]
       ,[AGE1_X_SEVERITY1]) ) as unpvt
+	  where val = 1
 
 	  if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null drop table #RiskscoreBYMemberPre_CSR
+
+/*** calculate risk score by multiplying the value columns by the risk score factors from the risk score factors table based on the member's metal level. Model year variable set at the beginning uses the version populated in the risk score table. When importing new risk score coefficients, need to update the model year variable to the name imported in the model year column
+****/
 	  --- adult model
 	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
 	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) risk_score, mbr_id, eff_date, exp_date into #RiskscoreBYMemberPre_CSR from #hcc_unpivot up join RiskScoreFactors rf
@@ -3088,28 +3105,38 @@ SELECT [MBR_ID]
 	  and model_year = @model_year
 	  group by mbr_id, eff_date, exp_date
 
-	  drop table #AcceptableClaims
-  	  
-	  
-	  
-	  drop table #hcc_unpivot
-	  drop table #MemberDiagnosisMap
-	  drop table #MemberHCCMap
-	  drop table #memberMapSvcDt
-	  drop table #RXC_Mapping
-	if object_id('tempdb..#riskscorepostCSR') is not null  drop table #riskscorepostCSR
+--- take the risk score, then apply the CSR multiplier factors ----
 	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre, rs.risk_score * (case when csr in (1 ,2,6,10,12,13) then 1.12 when csr in (7,11) then 1.15 when csr in (5,9) then 1.07 else 1.00 end) rs_post_csr into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
 on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 order by mbr_id
 
-
+--- update the hcc_list table ----
 update hc
 set risk_score = rs.rs_post_csr from
 hcc_list hc join #riskscorepostCSR rs on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 
+--- drop all the temp tables ----
+if object_id('tempdb..#AcceptableClaims') is not null		  
+drop table #AcceptableClaims	  
+if object_id('tempdb..#hcc_unpivot') is not null	  
+drop table #hcc_unpivot
+if object_id('tempdb..#MemberDiagnosisMap') is not null	  
+drop table #MemberDiagnosisMap
+if object_id('tempdb..#MemberHCCMap') is not null	  
+drop table #MemberHCCMap
+if object_id('tempdb..#memberMapSvcDt') is not null	  
+drop table #memberMapSvcDt
+if object_id('tempdb..#RXC_Mapping') is not null	  
+drop table #RXC_Mapping
+if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null 
+drop table #RiskscoreBYMemberPre_CSR
+if object_id('tempdb..#riskscorepostCSR') is not null 
+drop table #riskscorepostCSR
+
+----- End Model Code. Use the HCC_List table to query your risk scores -----
 select left(hc.hios,14), hc.metal, market, sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.eff_date,
 
 hc.exp_date)/30)
