@@ -1,6 +1,6 @@
 # HHS HCC SQL Risk Score Model
 
-This package was developed based on the CMS/HHS Published DIY SAS model for the HHS-HCC risk adjustment program, published at Regulations and Guidance | CMS. The current version was based on the DIY model published December 29, 2022, relying on the “instructions”  and “technical details” . We have made our best efforts to replicate the logic found in the CMS-published SAS algorithm in T-SQL assuming a Microsoft SQL Sever environment. For benefit years where HHS has not yet issued a DIY model (currently 2023 and 2024), the most recently published coefficients found in rulemaking was used.  Our interpretation of the model changes for 2023 and 2024 related to severity and transplant interaction factors required the use of some judgment, so it is possible HHS will implement it in a different manner.
+This package was developed based on the CMS/HHS Published DIY SAS model for the HHS-HCC risk adjustment program, published at https://www.cms.gov/cciio/resources/regulations-and-guidance#Health%20Market%20Reforms. The current version was based on the DIY model published December 29, 2022, relying on the “instructions” [^1] and “technical details” [^2]. We have made our best efforts to replicate the logic found in the CMS-published SAS algorithm in T-SQL assuming a Microsoft SQL Sever environment. For benefit years where HHS has not yet issued a DIY model (currently 2023 and 2024), the most recently published coefficients found in rulemaking was used [^3].  Our interpretation of the model changes for 2023 and 2024 related to severity and transplant interaction factors required the use of some judgment, so it is possible HHS will implement it in a different manner.
 
 Although this model has been tested and found to be consistent with the HHS SAS model and with EDGE server business rules and logic, it is offered AS IS with no warranty, express, implied or otherwise. The user assumes any and all risks associated with using this model, including potential risks to your data; it is HIGHLY recommended that you use a database dedicated to deploying this model, as the table creation scripts drops and recreates tables throughout. If you happen to have had a table named in the same way as this model named it, you could experience data loss. 
 
@@ -49,3 +49,9 @@ If you have found this useful, please share it. If you have found bugs, please s
 
 Wesley Sanders
 wesley@evensun.co
+
+[^1]: https://www.cms.gov/files/document/ra-cy2022-diy-instructions-5cr-122722.pdf
+[^2]: https://www.cms.gov/files/document/cy2022-diy-tables-12202022.xlsx
+[^3]: 2023 Source: https://www.cms.gov/files/document/2023-benefit-year-final-hhs-risk-adjustment-model-coefficients.pdf. 
+2024 Source: https://www.cms.gov/files/document/cms-9899-p-patient-protection-nprm.pdf, pp. 54-70.
+
