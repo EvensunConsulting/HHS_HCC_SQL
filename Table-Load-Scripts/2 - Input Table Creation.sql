@@ -1337,5 +1337,19 @@ GO
 
 ALTER TABLE [dbo].[hcc_list] ADD  DEFAULT ((0)) FOR [AGE1_X_SEVERITY1]
 GO
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Supplemental]') AND type in (N'U'))
+DROP TABLE [dbo].[Supplemental]
+GO
 
+CREATE TABLE [dbo].[Supplemental](
+	[RowNo] [int] IDENTITY(1,1) NOT NULL,
+	[ClaimNumber] [varchar](50) NOT NULL,
+	[DX] [varchar](10) NOT NULL,
+	[AddDeleteFlag] [varchar](1) NULL,
+ CONSTRAINT [PK_Supplemental] PRIMARY KEY CLUSTERED 
+(
+	[RowNo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
 
