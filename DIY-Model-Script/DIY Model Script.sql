@@ -1,6 +1,3 @@
-/* (c) 2023 Wesley Sanders and Evensun Consulting LLC. This model is provided AS IS 
-with no warranties, express or implied. User uses this code at their own risk. Please read the "Read Me and Disclaimer" document found with this code before running this script.**/
-
 use [RiskAdjustment] --- change this to whatever database you are using
 declare @benefityear int = 2022 ---- set this value to the model year you want to run your data through. 
 declare @startdate date = '2022-01-01' -- should generally be January 1
@@ -44,7 +41,7 @@ delete from hcc_list
 	  else 0 end CSR
       ,[Gender]
       ,[Market]
-  FROM [RiskAdjustment].[dbo].[Enrollment]
+  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
