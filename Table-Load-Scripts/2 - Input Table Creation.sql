@@ -204,6 +204,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[market] [int] NULL,
 	[age_last] [int] NULL,
 	[enr_dur] [int] NULL,
+	[risk_score] float NULL
 	[TRANSPLANT_FLAG] [int] NULL,
 	[HCC_COUNT] [int] NULL,
 	[SEVERE_V3] [int] NULL,
