@@ -24,6 +24,11 @@ CREATE TABLE [dbo].[Enrollment](
 	[RatingArea] [varchar](5) NOT NULL,
 	[State] [varchar](2) NOT NULL,
 	[Market] [varchar](1) NOT NULL,
+	[UDF_1] [varchar](50) null,
+	[UDF_2] [varchar](50) null,
+	[UDF_3] [varchar](50) null,
+	[UDF_4] [varchar](50) null,
+	[UDF_5] [varchar](50) null
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
