@@ -9,6 +9,7 @@ declare @paidthrough date = '2023-04-30' --- paid through date
 /***** End User Inputs; Do not edit below this line ******/
 
 declare @model_year varchar(50)
+if @benefityear = 2020 set @model_year = '2020_DIY_080320'
 if @benefityear = 2021 set @model_year = '2021_DIY_033122'
 if @benefityear = 2022 set @model_year = '2022_DIY_122022'
 if @benefityear = 2023 set @model_year = '2023_NBPP_050622'
