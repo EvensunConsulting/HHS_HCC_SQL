@@ -125,7 +125,7 @@ CREATE TABLE [dbo].[MedicalClaims](
 	[Modifier2] [varchar](2) NULL,
 	[Modifier3] [varchar](2) NULL,
 	[PlaceOfServiceCode] [varchar](2) NULL,
-	[StatusFlag] [varchar](1) NULL,
+	[DeniedFlag] [varchar](1) NULL,
 	[DX1] [varchar](10) NOT NULL,
 	[DX2] [varchar](10) NULL,
 	[DX3] [varchar](10) NULL,
@@ -198,7 +198,7 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hcc_l
 DROP TABLE [dbo].[hcc_list]
 
 CREATE TABLE [dbo].[hcc_list](
-	[id] [int] IDENTITY(1,2) NOT NULL,
+	[id] [int] IDENTITY(1,1) NOT NULL,
 	[MBR_ID] [varchar](100) NULL,
 	[EFF_DATE] [date] NULL,
 	[EXP_DATE] [date] NULL,
@@ -208,9 +208,11 @@ CREATE TABLE [dbo].[hcc_list](
 	[DOB] [date] NULL,
 	[SEX] [varchar](1) NULL,
 	[market] [int] NULL,
+	[age_first] int null,
 	[age_last] [int] NULL,
 	[enr_dur] [int] NULL,
 	[risk_score] float NULL,
+	[risk_score_no_demog] float null,
 	[TRANSPLANT_FLAG] [int] NULL,
 	[HCC_COUNT] [int] NULL,
 	[SEVERE_V3] [int] NULL,
