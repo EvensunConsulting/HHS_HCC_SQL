@@ -91,7 +91,7 @@ acceptable_reason varchar(50))
 --- First insert inpatient claims where an allowable HCPCS isn't required
 insert into #acceptableclaims
 select distinct claimnumber, 'BillTypeIP'
-from MedicalClaims where formtype = 'I' and  billtype in ('111','117')
+from MedicalClaims where formtype = 'I' and  right(billtype,3) in ('111','117')
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
 
