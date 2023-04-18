@@ -202,7 +202,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[MBR_ID] [varchar](100) NULL,
 	[EFF_DATE] [date] NULL,
 	[EXP_DATE] [date] NULL,
-	[METAL] [varchar](10) NULL,
+	[METAL] [varchar](12) NULL,
 	[HIOS] [varchar](16) NULL,
 	[CSR] [int] NULL,
 	[DOB] [date] NULL,
