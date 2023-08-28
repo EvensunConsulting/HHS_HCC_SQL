@@ -5,6 +5,16 @@ USE [RiskAdjustment] --- set this to the database you will use ----
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Enrollment]') AND type in (N'U'))
 DROP TABLE [dbo].[Enrollment]
 GO
+IF
+DROP TABLE [dbo].[Enrollment]
+GO
+
+/****** Object:  Table [dbo].[Enrollment]    Script Date: 8/28/2023 8:17:22 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
 
 CREATE TABLE [dbo].[Enrollment](
 	[RowNo] [int] IDENTITY(1,1) NOT NULL,
@@ -24,15 +34,24 @@ CREATE TABLE [dbo].[Enrollment](
 	[RatingArea] [varchar](5) NOT NULL,
 	[State] [varchar](2) NOT NULL,
 	[Market] [varchar](1) NOT NULL,
-	[UDF_1] [varchar](50) null,
-	[UDF_2] [varchar](50) null,
-	[UDF_3] [varchar](50) null,
-	[UDF_4] [varchar](50) null,
-	[UDF_5] [varchar](50) null
+	[zip_code] [varchar](9) NULL,
+	[Race] [varchar](2) null,
+	[ethnicity] [varchar](2) null,
+	[aptc_flag] [varchar](1) null,
+	[statepremiumsubsidy_flag] [varchar](1) null,
+	[stateCSR_flag] [varchar](1) null,
+	[ichra_qsehra] [varchar](1) null,
+	[qsehra_spouse] [varchar](1) null,
+	[qsehra_medical] [varchar](1) null,
+	[UDF_1] [varchar](50) NULL,
+	[UDF_2] [varchar](50) NULL,
+	[UDF_3] [varchar](50) NULL,
+	[UDF_4] [varchar](50) NULL,
+	[UDF_5] [varchar](50) NULL,
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 
@@ -88,6 +107,9 @@ EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'2-digit state 
 GO
 
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Market identifier: 1 = individual, 2 = small group' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'Market'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'ZIP_code - use ZIP or ZIP+4; exclude hyphens' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'zip_code'
 GO
 
 
