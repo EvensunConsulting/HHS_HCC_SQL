@@ -2427,10 +2427,14 @@ UPDATE HCC_LIST set severe_v3 = 0
 UPDATE HCC_LIST
 SET severe_v3 = 1
 where (HHS_HCC002 = 1 or hhs_hcc003 = 1 or hhs_hcc004 = 1 or hhs_hcc006 = 1 or hhs_hcc018 = 1
-or hhs_hcc023 = 1 or hhs_hcc034 = 1 or hhs_hcc041 = 1 or hhs_hcc042 = 1 or hhs_hcc096 = 1 or hhs_hcc121 = 1 or hhs_hcc122 = 1or hhs_hcc125 = 1 or hhs_hcc135 = 1 or hhs_hcc145 = 1 or hhs_hcc156 = 1 or hhs_hcc156 = 1 or hhs_hcc163 =1  or hhs_hcc183 = 1 or hhs_hcc218 =1 or hhs_hcc223 =1 or hhs_hcc251 =1 or G13 = 1 or G14 = 1)
+or hhs_hcc023 = 1 or hhs_hcc034 = 1 or hhs_hcc041 = 1 or hhs_hcc042 = 1 or hhs_hcc096 = 1 or hhs_hcc121 = 1 or hhs_hcc122 = 1 
+	or hhs_hcc125 = 1 or hhs_hcc135 = 1 or hhs_hcc145 = 1 or 
+	hhs_hcc156 = 1 or hhs_hcc158 = 1 or hhs_hcc163 =1  or hhs_hcc183 = 1 or 
+	hhs_hcc218 =1 or hhs_hcc223 =1 or hhs_hcc251 =1 or G13 = 1 or G14 = 1)
 and age_last >= 2
 
-update hcc_list set transplant_flag = 1 where (hhs_hcc018 = 1 or hhs_hcc034 =1 or hhs_hcc041 = 1
+update hcc_list set transplant_flag = 1 where 
+	(hhs_hcc018 = 1 or hhs_hcc034 =1 or hhs_hcc041 = 1
 or hhs_hcc158 = 1 or hhs_hcc183 = 1 or hhs_hcc251 =1 or g14 = 1)
 and age_last >= 2
 --- count payment HCCs ---
