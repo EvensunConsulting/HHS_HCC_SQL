@@ -14,6 +14,7 @@ if @benefityear = 2021 set @model_year = '2021_DIY_033122'
 if @benefityear = 2022 set @model_year = '2022_DIY_122022'
 if @benefityear = 2023 set @model_year = '2023_NBPP_050622'
 if @benefityear = 2024 set @model_year = '2024_NBPP_041923'
+if @benefityear = 2025 set @model_year = '2025_NBPP_111623'
 
 ----- Updates HCC List table from the Enrollment tables ----
 delete from hcc_list
