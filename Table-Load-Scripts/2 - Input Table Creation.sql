@@ -5,7 +5,6 @@ USE [RiskAdjustment] --- set this to the database you will use ----
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Enrollment]') AND type in (N'U'))
 DROP TABLE [dbo].[Enrollment]
 GO
-IF
 DROP TABLE [dbo].[Enrollment]
 GO
 
