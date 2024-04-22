@@ -20,30 +20,36 @@ if @benefityear = 2025 set @model_year = '2025_NBPP_111623'
 delete from hcc_list
 
   insert into hcc_list
-  (MBR_ID,
-  eff_date, exp_date, dob, metal, hios, csr, sex, market)
-  SELECT distinct [MemberID]
-      ,[EffDat]
-      ,[Expdat]
-	  ,birthdate
-	        ,[MetalLevel]
-      ,[HIOS_ID]
-	  ,case when right(hios_ID, 2) = '06' then 1
-	  when right(hios_id,2) = '05' then 2
-	  when right(hios_id, 2) = '04' then 3
-	  when right(hios_id, 2) in ('00','01') then 0
-	  when right(hios_id,2) = '02' and metallevel = 'bronze' then 7
-	  when right(hios_id, 2) = '02' and metallevel = 'silver' then 6
-	  when right(hios_id, 2) = '02' and metallevel = 'gold' then 5
-	  when right(hios_id,2) = '02' and metallevel = 'platinum' then 4
-	  when right(hios_id,2) = '03' and metallevel = 'bronze' then 11
-	  when right(hios_id, 2) = '03' and metallevel = 'silver' then 10
-	  when right(hios_id, 2) = '03' and metallevel = 'gold' then 9
-	  when right(hios_id,2) = '03' and metallevel = 'platinum' then 8
-	  else 0 end CSR
-      ,[Gender]
-      ,[Market]
-  FROM [Enrollment]
+	  (MBR_ID,
+	  eff_date, exp_date, dob, metal, hios, csr, sex, market, state, ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
+	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5
+	  )
+	  SELECT distinct [MemberID]
+		  ,[EffDat]
+		  ,[Expdat]
+		  ,birthdate
+				,[MetalLevel]
+		  ,[HIOS_ID]
+		  ,case when right(hios_ID, 2) = '06' then 1
+		  when right(hios_id,2) = '05' then 2
+		  when right(hios_id, 2) = '04' then 3
+		  when right(hios_id, 2) in ('00','01') then 0
+		  when right(hios_id,2) = '02' and metallevel = 'bronze' then 7
+		  when right(hios_id, 2) = '02' and metallevel = 'silver' then 6
+		  when right(hios_id, 2) = '02' and metallevel = 'gold' then 5
+		  when right(hios_id,2) = '02' and metallevel = 'platinum' then 4
+		  when right(hios_id,2) = '03' and metallevel = 'bronze' then 11
+		  when right(hios_id, 2) = '03' and metallevel = 'silver' then 10
+		  when right(hios_id, 2) = '03' and metallevel = 'gold' then 9
+		  when right(hios_id,2) = '03' and metallevel = 'platinum' then 8
+		  else 0 end CSR
+		  ,[Gender]
+		  ,[Market],state,
+		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
+	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5
+
+	  FROM [Enrollment]
+  where effdat <= @enddate and expdat >= @startdate
   where effdat <= @enddate and expdat >= @startdate
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
