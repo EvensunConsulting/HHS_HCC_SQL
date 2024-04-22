@@ -237,6 +237,15 @@ GO
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hcc_list]') AND type in (N'U'))
 DROP TABLE [dbo].[hcc_list]
+USE [EvenSun]
+GO
+
+/****** Object:  Table [dbo].[hcc_list]    Script Date: 4/22/2024 7:57:01 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
 
 CREATE TABLE [dbo].[hcc_list](
 	[id] [int] IDENTITY(1,1) NOT NULL,
@@ -248,35 +257,52 @@ CREATE TABLE [dbo].[hcc_list](
 	[CSR] [int] NULL,
 	[DOB] [date] NULL,
 	[SEX] [varchar](1) NULL,
-	state varchar(2) null,
-	ratingarea varchar(5) null,
-	epai varchar(5) null,
+	[state] [varchar](2) NULL,
+	[ratingarea] [varchar](5) NULL,
+	[epai] [varchar](5) NULL,
+	[zip_code] [varchar](9) NULL,
+	[race] [varchar](2) NULL,
+	[ethnicity] [varchar](2) NULL,
+	[aptc_flag] [varchar](1) NULL,
+	[statepremiumsubsidy_flag] [varchar](1) NULL,
+	[statecsr_flag] [varchar](1) NULL,
+	[ichra_qsehra] [varchar](1) NULL,
+	[qsehra_spouse] [varchar](1) NULL,
+	[qsehra_medical] [varchar](1) NULL,
+	[udf_1] [varchar](50) NULL,
+	[udf_2] [varchar](50) NULL,
+	[udf_3] [varchar](50) NULL,
+	[udf_4] [varchar](50) NULL,
+	[udf_5] [varchar](50) NULL,
+	[paidthroughdate] [date] NULL,
+	[subscriberflag] [varchar](1) NULL,
+	[subscribernumber] [varchar](50) NULL,
 	[market] [int] NULL,
-	[age_first] int null,
+	[age_first] [int] NULL,
 	[age_last] [int] NULL,
 	[enr_dur] [int] NULL,
-	[risk_score] float NULL,
-	[risk_score_no_demog] float null,
-		[catastrophic_risk_score] float null,
-	[bronze_risk_score] float null,
-	[silver_risk_score] float null,
-	[gold_risk_score] float null,
-	[platinum_risk_score] float null,
-	[renewal_flag] int null,
-	[premium] float null,
-	[risk_transfer_est] float null,
-	medical_paid float null,
-	medical_allowed float null,
-	pharmacy_allowed float null,
-	pharmacy_paid float null,
-	hcrp_est float null,
-	ibnr_est float null,
-	prof_paid float null,
-	prof_allowed float null,
-	ip_paid float null,
-	ip_allowed float null,
-	op_paid float null,
-	op_allowed float null,
+	[risk_score] [float] NULL,
+	[risk_score_no_demog] [float] NULL,
+	[catastrophic_risk_score] [float] NULL,
+	[bronze_risk_score] [float] NULL,
+	[silver_risk_score] [float] NULL,
+	[gold_risk_score] [float] NULL,
+	[platinum_risk_score] [float] NULL,
+	[renewal_flag] [int] NULL,
+	[premium] [float] NULL,
+	[risk_transfer_est] [float] NULL,
+	[medical_paid] [float] NULL,
+	[medical_allowed] [float] NULL,
+	[pharmacy_allowed] [float] NULL,
+	[pharmacy_paid] [float] NULL,
+	[hcrp_est] [float] NULL,
+	[ibnr_est] [float] NULL,
+	[prof_paid] [float] NULL,
+	[prof_allowed] [float] NULL,
+	[ip_paid] [float] NULL,
+	[ip_allowed] [float] NULL,
+	[op_paid] [float] NULL,
+	[op_allowed] [float] NULL,
 	[TRANSPLANT_FLAG] [int] NULL,
 	[HCC_COUNT] [int] NULL,
 	[SEVERE_V3] [int] NULL,
@@ -1410,6 +1436,9 @@ GO
 
 ALTER TABLE [dbo].[hcc_list] ADD  DEFAULT ((0)) FOR [AGE1_X_SEVERITY1]
 GO
+
+
+
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Supplemental]') AND type in (N'U'))
 DROP TABLE [dbo].[Supplemental]
 GO
