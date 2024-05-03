@@ -3,6 +3,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
+IF OBJECT_ID('RiskScoreFactors') is not null
+	drop table riskscorefactors
+	
 CREATE TABLE [dbo].[RiskScoreFactors](
 	[Model] [nvarchar](50) NULL,
 	[Variable] [nvarchar](50) NULL,
