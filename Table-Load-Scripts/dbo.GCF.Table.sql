@@ -2,11 +2,6 @@
 USE [riskadjustment]
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[GCF]') AND type in (N'U'))
 DROP TABLE [dbo].[GCF]
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-If OBJECT_ID('DBO.gcf')
 
 CREATE TABLE [dbo].[GCF](
 	[State] [nvarchar](50) NULL,
