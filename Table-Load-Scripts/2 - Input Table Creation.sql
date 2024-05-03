@@ -237,7 +237,6 @@ GO
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hcc_list]') AND type in (N'U'))
 DROP TABLE [dbo].[hcc_list]
-USE [EvenSun]
 GO
 
 /****** Object:  Table [dbo].[hcc_list]    Script Date: 4/22/2024 7:57:01 AM ******/
