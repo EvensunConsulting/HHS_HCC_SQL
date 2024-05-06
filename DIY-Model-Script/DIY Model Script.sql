@@ -50,7 +50,6 @@ delete from hcc_list
 
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
-  where effdat <= @enddate and expdat >= @startdate
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
@@ -90,20 +89,7 @@ select mbr_id, datediff(d, first_day, last_day) enr_dur, benefit_year into #enro
   and year(hc.exp_date) = diff.benefit_year
   join #age_first af on hc.mbr_id = af.mbr_id
 
-      if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
-select mbr_id, datediff(d, first_day, last_day) enr_dur, benefit_year into #enrollment_duration from #yearly_enrollment
-
-
-
-  ----- determine enrollment duration for the given calendar year ----
-  update hc
-  set hc.age_last = age.age_last,
-  hc.enr_dur = diff.enr_dur
-  from hcc_list hc
-  join #age_last age on hc.mbr_id = age.mbr_id
-  and year(hc.exp_date) = age.benefit_year
-  join #enrollment_duration diff on hc.mbr_id = diff.mbr_id
-  and year(hc.exp_date) = diff.benefit_year
+    
         if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
     if object_id('tempdb..#age_last') is not null drop table #age_last
   if object_id('tempdb..#yearly_enrollment') is not null drop table #yearly_enrollment
