@@ -5,10 +5,7 @@ USE [RiskAdjustment] --- set this to the database you will use ----
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Enrollment]') AND type in (N'U'))
 DROP TABLE [dbo].[Enrollment]
 GO
-DROP TABLE [dbo].[Enrollment]
-GO
 
-/****** Object:  Table [dbo].[Enrollment]    Script Date: 8/28/2023 8:17:22 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -118,7 +115,7 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Medic
 DROP TABLE [dbo].[MedicalClaims]
 GO
 
-/****** Object:  Table [dbo].[MedicalClaims]    Script Date: 1/3/2023 5:42:22 PM ******/
+
 SET ANSI_NULLS ON
 GO
 
@@ -198,9 +195,6 @@ GO
 
 
 
-
-/****** Object:  Table [dbo].[PharmacyClaims]    Script Date: 12/22/2022 3:16:20 PM ******/
-/****** Object:  Table [dbo].[PharmacyClaims]    Script Date: 1/3/2023 5:52:55 PM ******/
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[PharmacyClaims]') AND type in (N'U'))
 DROP TABLE [dbo].[PharmacyClaims]
 GO
@@ -249,7 +243,6 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hcc_l
 DROP TABLE [dbo].[hcc_list]
 GO
 
-/****** Object:  Table [dbo].[hcc_list]    Script Date: 4/22/2024 7:57:01 AM ******/
 SET ANSI_NULLS ON
 GO
 
