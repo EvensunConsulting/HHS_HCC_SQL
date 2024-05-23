@@ -46,11 +46,14 @@ CREATE TABLE [dbo].[Enrollment](
 	[ichra_qsehra] [varchar](1) null,
 	[qsehra_spouse] [varchar](1) null,
 	[qsehra_medical] [varchar](1) null,
-	[UDF_1] [varchar](50) NULL,
-	[UDF_2] [varchar](50) NULL,
-	[UDF_3] [varchar](50) NULL,
-	[UDF_4] [varchar](50) NULL,
-	[UDF_5] [varchar](50) NULL,
+	[BrokerNPN] varchar(15) null,
+	[BrokerName] varchar(100) null,
+	[CommissionPaid] float null,
+	[UDF_1] [varchar](500) NULL,
+	[UDF_2] [varchar](500) NULL,
+	[UDF_3] [varchar](500) NULL,
+	[UDF_4] [varchar](500) NULL,
+	[UDF_5] [varchar](500) NULL,
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
@@ -179,6 +182,8 @@ CREATE TABLE [dbo].[MedicalClaims](
 	[DX23] [varchar](10) NULL,
 	[DX24] [varchar](10) NULL,
 	[DX25] [varchar](10) NULL,
+	[DeniedReasonCode] varchar(10) null,
+	[DeniedReasonDesc] varchar(1000) null,
 	[DischargeCode] [varchar](2) NULL,
 	[BillingProviderID] [varchar](15) NULL,
 	[BillingProviderIDQualifier] [varchar](2) NULL,
@@ -188,13 +193,14 @@ CREATE TABLE [dbo].[MedicalClaims](
 	[NetworkIndicator] varchar(1) NULL,
 	[DerivedIndicator] varchar(1) NULL,
 	[InterimBillOrigClaimId] varchar(50) NULL,
+	[InterimBillOrigClaimLine] int null,
 	[PriorClaimID] varchar(50) null,
 	[ClaimVersion] int DEFAULT 1,
-	[udf1] varchar(100) null,
-	[udf2] varchar(100) null,
-	[udf3] varchar(100) null,
-	[udf4] varchar(100) null,
-	[udf5] varchar(100) null
+	[udf1] varchar(500) null,
+	[udf2] varchar(500) null,
+	[udf3] varchar(500) null,
+	[udf4] varchar(500) null,
+	[udf5] varchar(500) null
 
  CONSTRAINT [PK_MedicalClaims] PRIMARY KEY CLUSTERED 
 (
@@ -243,11 +249,11 @@ CREATE TABLE [dbo].[PharmacyClaims](
 	PriorClaimID varchar(50) null,
 	ClaimVersion int default 1,
 	RebateAmount float null,
-	udf1 varchar(100) null,
-	udf2 varchar(100) null,
-	udf3 varchar(100) null,
-	udf4 varchar(100) null,
-	udf5 varchar(100) null
+	udf1 varchar(500) null,
+	udf2 varchar(500) null,
+	udf3 varchar(500) null,
+	udf4 varchar(500) null,
+	udf5 varchar(500) null
  CONSTRAINT [PK_PharmacyClaims] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
@@ -298,6 +304,8 @@ CREATE TABLE [dbo].[hcc_list](
 	[ichra_qsehra] [varchar](1) NULL,
 	[qsehra_spouse] [varchar](1) NULL,
 	[qsehra_medical] [varchar](1) NULL,
+		[BrokerNPN] varchar(15) null,
+	[BrokerName] varchar(100) null,
 	[udf_1] [varchar](50) NULL,
 	[udf_2] [varchar](50) NULL,
 	[udf_3] [varchar](50) NULL,
@@ -319,7 +327,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[platinum_risk_score] [float] NULL,
 	[renewal_flag] [int] NULL,
 	[premium] [float] NULL,
-	[aptc_amount] float null
+	[aptc_amount] float null,
 	[risk_transfer_est] [float] NULL,
 	[medical_paid] [float] NULL,
 	[medical_allowed] [float] NULL,
@@ -333,6 +341,10 @@ CREATE TABLE [dbo].[hcc_list](
 	[ip_allowed] [float] NULL,
 	[op_paid] [float] NULL,
 	[op_allowed] [float] NULL,
+	[rx_rebate] float null,
+	[commissions] float null,
+	[admin] float null,
+	[exchange_fee] float null,
 	[TRANSPLANT_FLAG] [int] NULL,
 	[HCC_COUNT] [int] NULL,
 	[SEVERE_V3] [int] NULL,
@@ -1476,10 +1488,12 @@ GO
 CREATE TABLE [dbo].[Supplemental](
 	[RowNo] [int] IDENTITY(1,1) NOT NULL,
 	[ClaimNumber] [varchar](50) NOT NULL,
+	[EDGEClaimNumber] varchar(100) not null,
 	[DX] [varchar](10) NOT NULL,
 	[AddDeleteFlag] [varchar](1) NOT NULL,
 	recordsource varchar(2) null,
 	edgesupplementalidentifier varchar(100) null,
+	RecordVendor varchar(100) null,
 	[udf1] varchar(100) null,
 	[udf2] varchar(100) null
  CONSTRAINT [PK_Supplemental] PRIMARY KEY CLUSTERED 
