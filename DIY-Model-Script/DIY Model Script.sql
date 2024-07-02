@@ -346,13 +346,13 @@ update hc
 set HHS_HCC035_1 = 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '35.1')
+and hcc = '351')
 
 update hc
 set HHS_HCC035_2 = 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '35.2')
+and hcc = '352')
 
 update hc
 set HHS_HCC036 = 1
@@ -364,13 +364,13 @@ update hc
 set HHS_HCC037_1 = 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '37.1')
+and hcc = '371')
 
 update hc
 set HHS_HCC037_2 = 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '37.2')
+and hcc = '372')
 
 update hc
 set HHS_HCC041 = 1
@@ -534,13 +534,13 @@ update hc
 set HHS_HCC087_1= 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '87.1')
+and hcc = '871')
 
 update hc
 set HHS_HCC087_2= 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '87.2')
+and hcc = '872')
 
 
 update hc
@@ -845,14 +845,14 @@ update hc
 set HHS_HCC161_1= 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '161.1')
+and hcc = '1611')
 
 
 update hc
 set HHS_HCC161_2= 1
 from hcc_list hc 
 where exists (select 1 from #MemberHCCMap mp where hc.mbr_id = mp.MemberID
-and hcc = '161.2')
+and hcc = '1612')
 
 
 update hc
