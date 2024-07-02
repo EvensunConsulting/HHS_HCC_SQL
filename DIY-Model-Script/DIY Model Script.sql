@@ -22,7 +22,10 @@ delete from hcc_list
   insert into hcc_list
 	  (MBR_ID,
 	  eff_date, exp_date, dob, metal, hios, csr, sex, market, state, ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
-	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5
+	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse,
+	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,
+	  edge_memberid,memberuid,
+	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions
 	  )
 	  SELECT distinct [MemberID]
 		  ,[EffDat]
@@ -46,10 +49,12 @@ delete from hcc_list
 		  ,[Gender]
 		  ,[Market],state,
 		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
-	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5
-
+	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, 
+	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,memberuid,
+	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
+
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
