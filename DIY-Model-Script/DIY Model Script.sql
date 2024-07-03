@@ -1,10 +1,11 @@
-use [RiskAdjustment] --- change this to whatever database you are using
-declare @benefityear int = 2022 ---- set this value to the model year you want to run your data through. 
-declare @startdate date = '2022-01-01' -- should generally be January 1
-declare @enddate date = '2022-12-31' --- last date of incurred dates you want to use
-declare @paidthrough date = '2023-04-30' --- paid through date
+use tarohealth --- change this to whatever database you are using
+declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. 
+declare @startdate date = '2023-01-01' -- should generally be January 1
+declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
+declare @paidthrough date = '2024-06-30' --- paid through date
 
-
+declare @state varchar(2) = 'ME'
+declare @market int = 4
 
 /***** End User Inputs; Do not edit below this line ******/
 
@@ -24,12 +25,13 @@ delete from hcc_list
 	  eff_date, exp_date, dob, metal, hios, csr, sex, market, state, ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
 	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse,
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,
-	  edge_memberid,memberuid,
+	  edge_memberid,
+memberuid,
 	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions
 	  )
 	  SELECT distinct [MemberID]
-		  ,[EffDat]
-		  ,[Expdat]
+		  ,case when effdat < @startdate then @startdate else effdat end effdat
+		  ,case when expdat > @enddate then @enddate else expdat end expdat
 		  ,birthdate
 				,[MetalLevel]
 		  ,[HIOS_ID]
@@ -50,35 +52,34 @@ delete from hcc_list
 		  ,[Market],state,
 		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
 	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, 
-	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,memberuid,
+	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,	  coalesce(memberuid, edge_memberid, memberid),
 	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
-
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
   if object_id('tempdb..#yearly_enrollment') is not null drop table #yearly_enrollment
   declare @cal_year int = year(@startdate)
-  select mbr_id, case when min(eff_date) < datefromparts(@cal_year,1,1) then datefromparts(@cal_year,1,1) else min(eff_date) end first_day, 
+  select memberuid, case when min(eff_date) < datefromparts(@cal_year,1,1) then datefromparts(@cal_year,1,1) else min(eff_date) end first_day, 
   case when max(exp_date) > datefromparts(@cal_year, 12, 31) then datefromparts(@cal_year, 12, 31) else max(exp_date) end last_day, year(exp_date) benefit_year, dob
   into #yearly_enrollment
   from hcc_list
-  group by mbr_id, year(exp_date), dob
+  group by memberuid, year(exp_date), dob
 
     if object_id('tempdb..#age_last') is not null drop table #age_last
-select mbr_id, benefit_year, FLOOR(DATEDIFF(DAY, dob, last_day) / 365.25) age_last
+select memberuid, benefit_year, FLOOR(DATEDIFF(DAY, dob, last_day) / 365.25) age_last
 into #age_last
   from #yearly_enrollment
 
       if object_id('tempdb..#age_first') is not null drop table #age_first
-select mbr_id, benefit_year, FLOOR(DATEDIFF(DAY, dob, first_day) / 365.25) age_first
+select memberuid,benefit_year, FLOOR(DATEDIFF(DAY, dob, first_day) / 365.25) age_first
 into #age_first
   from #yearly_enrollment
  
 
       if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
-select mbr_id, datediff(d, first_day, last_day) enr_dur, benefit_year into #enrollment_duration from #yearly_enrollment
+select memberuid, datediff(d, first_day, last_day) enr_dur, benefit_year into #enrollment_duration from #yearly_enrollment
 
 
 
@@ -88,11 +89,12 @@ select mbr_id, datediff(d, first_day, last_day) enr_dur, benefit_year into #enro
   hc.enr_dur = diff.enr_dur,
   hc.age_first = af.age_first
   from hcc_list hc
-  join #age_last age on hc.mbr_id = age.mbr_id
+  join #age_last age on hc.MemberUID = age.MemberUID
   and year(hc.exp_date) = age.benefit_year
-  join #enrollment_duration diff on hc.mbr_id = diff.mbr_id
+  join #enrollment_duration diff on hc.MemberUID = diff.MemberUID
+
   and year(hc.exp_date) = diff.benefit_year
-  join #age_first af on hc.mbr_id = af.mbr_id
+  join #age_first af on hc.MemberUID = af.MemberUID
 
     
         if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
@@ -114,8 +116,6 @@ select distinct claimnumber, 'BillTypeIP'
 from MedicalClaims where formtype = 'I' and  right(billtype,3) in ('111','117')
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
-
-
 --- outpatient with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'UBServiceCode'
@@ -126,7 +126,6 @@ and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto))  between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
-
 --- hcfa with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'HCFAServiceCode'
@@ -137,8 +136,9 @@ and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto)) between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
-
 --- joins acceptable claims to diagnosis codes and creates a list of member IDs and diagnoses
+
+delete from #AcceptableClaims where claimnumber not in (select claimnumber from medicalclaims where deniedflag = 'A')
 
 if object_id('tempdb..#MemberMapSvcDt') is not null drop table #memberMapSvcDt
 select distinct 
@@ -181,8 +181,6 @@ unpivot (diagnosis for claimnumber in ([DX1]     ,[DX2]      ,[DX3]      ,[DX4] 
 	  	  and FLOOR(DATEDIFF(DAY, BirthDate, diag_dt))/365.25 between cc_age_split_min_age_inc and cc_age_split_max_age_exc
 		  and acc_cd <> '0'
 
-
-
 /***** map each member to allowable RXCs *****/
 			  if object_id('tempdb..#RXC_Mapping') is not null drop table #rxc_mapping
 
@@ -190,10 +188,12 @@ select distinct memberid, RXC into #RXC_Mapping from PharmacyClaims rx join NDC_
 on rx.NDC = ndc.NDC
 and FilledDate between @startdate and @enddate
 and PaidDate <= @paidthrough
+and deniedflag = 'A'
 union
 select distinct memberid, rxc from medicalclaims med join hcpcsrxc hcpcs on med.ServiceCode = hcpcs.hcpcs_code
 where (formtype = 'P' or billtype in ('111','117','731','737','131','137','711','717','761','767','771','777','851','857','871','877')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
+and deniedflag = 'A'
 
 
 /***** Update the member hcc table based on the records in the mapping tables ****/
@@ -1401,18 +1401,8 @@ where age_last = 0 and sex = 'M'
 
 update hcc_list
 set  
-age0_female = 1
-where age_last = 0 and sex = 'F'
-
-update hcc_list
-set  
 age1_male = 1
 where age_last = 1 and sex = 'M'
-
-update hcc_list
-set  
-age1_female = 1
-where age_last = 1 and sex = 'F'
 
 update hcc_list
 set  
@@ -2045,12 +2035,6 @@ update hcc_list set ihcc_severity1 = 1
 where IHCC_SEVERITY5 = 0 and IHCC_SEVERITY4 = 0 and IHCC_SEVERITY3 = 0 and IHCC_SEVERITY2 = 0
 and  AGE_LAST between 0 and 1
 
---- infant model sets all as male ; no gender differential for RA factors, this updates the flags accordingly
-
-  update hcc_list set age0_male = 1, age0_female = 0 where age0_female = 1
-    update hcc_list set age1_male = 1, age1_female = 0 where age1_female = 1
-
-
 
 --- set infant HCCs ---
 	update hcc_list set EXTREMELY_IMMATURE_X_SEVERITY5  = 1 where IHCC_SEVERITY5 = 1 and IHCC_EXTREMELY_IMMATURE  = 1
@@ -2079,6 +2063,7 @@ update hcc_list set PREMATURE_MULTIPLES_X_SEVERITY1 = 1 where IHCC_SEVERITY1 = 1
 update hcc_list set TERM_X_SEVERITY1                = 1 where IHCC_SEVERITY1 = 1 and IHCC_TERM                = 1
 update hcc_list set AGE1_X_SEVERITY1                = 1   where IHCC_SEVERITY1 = 1 and IHCC_AGE1                = 1
 
+update hcc_list set age0_male = 0, age1_male = 1 where age_last = 0 and ihcc_age1 = 1 and age0_male = 1
 /***** Calculate HCC Counts, Apply 2023 Model severity factors and transplant flags ***/
 /****
 Payment HCC Count is not used in 2022 and prior models, 
@@ -3158,9 +3143,13 @@ drop table #RiskscoreBYMemberPre_CSR
 if object_id('tempdb..#riskscorepostCSR') is not null 
 drop table #riskscorepostCSR
 
+
+
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
-select left(hc.hios,14), hc.metal, market, sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.eff_date,
+select left(hc.hios,14), hc.metal, market, 
+sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.eff_date,
 
 hc.exp_date)/30)
 from hcc_list hc
-group by left(hc.hios,14), hc.metal, market
+group by grouping sets ((left(hc.hios,14), hc.metal, market),market)
+
