@@ -1,4 +1,4 @@
---use riskadjustment --- change this to whatever database you are using
+use riskadjustment --- change this to whatever database you are using
 declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. 
 declare @startdate date = '2023-01-01' -- should generally be January 1
 declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
