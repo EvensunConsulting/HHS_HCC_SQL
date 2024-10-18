@@ -1,10 +1,10 @@
-use riskadjustment --- change this to whatever database you are using
+--use riskadjustment --- change this to whatever database you are using
 declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. 
 declare @startdate date = '2023-01-01' -- should generally be January 1
 declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
 declare @paidthrough date = '2024-06-30' --- paid through date
 
-declare @state varchar(2) = 'ME'
+declare @state varchar(2) = 'NY'
 declare @market int = 4
 
 /***** End User Inputs; Do not edit below this line ******/
@@ -14,8 +14,9 @@ if @benefityear = 2020 set @model_year = '2020_DIY_080320'
 if @benefityear = 2021 set @model_year = '2021_DIY_033122'
 if @benefityear = 2022 set @model_year = '2022_DIY_122022'
 if @benefityear = 2023 set @model_year = '2023_NBPP_050622'
-if @benefityear = 2024 set @model_year = '2024_NBPP_041923'
+if @benefityear = 2024 set @model_year = '2024_DIY_090624'
 if @benefityear = 2025 set @model_year = '2025_NBPP_111623'
+if @benefityear = 2026 set @model_year = '2026_NBPP_100524'
 
 ----- Updates HCC List table from the Enrollment tables ----
 delete from hcc_list
@@ -183,8 +184,11 @@ unpivot (diagnosis for claimnumber in ([DX1]     ,[DX2]      ,[DX3]      ,[DX4] 
 
 /***** map each member to allowable RXCs *****/
 			  if object_id('tempdb..#RXC_Mapping') is not null drop table #rxc_mapping
-
-select distinct memberid, RXC into #RXC_Mapping from PharmacyClaims rx join NDC_RXC ndc
+			  create table #rxc_mapping
+			  (memberid varchar(10),
+			  rxc varchar(5))
+insert into #rxc_mapping
+select distinct memberid, RXC from PharmacyClaims rx join NDC_RXC ndc
 on rx.NDC = ndc.NDC
 and FilledDate between @startdate and @enddate
 and PaidDate <= @paidthrough
@@ -1593,11 +1597,20 @@ from hcc_list hc
 where exists (select 1 from #rxc_mapping mp where hc.mbr_id = mp.MemberID
 and rxc = '10')
 
+update hc set ACF_01 = 1
+from hcc_list hc 
+where exists (select 1 from #rxc_mapping mp where hc.mbr_id = mp.MemberID
+and rxc = 'ACF_01')
+
+
 ---- set to 0 RXC
 
 update hc set RXC_07 = 0
 from hcc_list hc 
 where rxc_06 = 1
+
+--- Proposed change where if someone was taking PrEP but also had an HIV DX, give themc redit for RXC01 rather than ACF
+update hc set rxc_01 = 1, acf_01 = 0 from hcc_list hc  where acf_01 = 1 and hhs_hcc001 = 1
 
 --- RXC HCC interaction factors ---
 update hcc_list set
@@ -1770,6 +1783,13 @@ and age_last >= 21
 update hcc_list set G18A =1, HHS_HCC207 =0, HHS_HCC208   = 0
 where  (HHS_HCC207 =1 or HHS_HCC208 = 1)
 and age_last >= 21
+
+if @benefityear >= 2023
+begin
+update hcc_list set G24 = 1, hhs_hcc018 = 0, hhs_hcc183 = 0
+where (hhs_hcc183 = 1 or hhs_hcc018 = 1)
+and age_last >= 21
+end
 
 UPDATE HCC_LIST SET INT_GROUP_H = 1 WHERE 
 (SEVERE_V3 = 1 and HHS_HCC006 = 1) OR  (
@@ -2435,12 +2455,12 @@ where (HHS_HCC002 = 1 or hhs_hcc003 = 1 or hhs_hcc004 = 1 or hhs_hcc006 = 1 or h
 or hhs_hcc023 = 1 or hhs_hcc034 = 1 or hhs_hcc041 = 1 or hhs_hcc042 = 1 or hhs_hcc096 = 1 or hhs_hcc121 = 1 or hhs_hcc122 = 1 
 	or hhs_hcc125 = 1 or hhs_hcc135 = 1 or hhs_hcc145 = 1 or 
 	hhs_hcc156 = 1 or hhs_hcc158 = 1 or hhs_hcc163 =1  or hhs_hcc183 = 1 or 
-	hhs_hcc218 =1 or hhs_hcc223 =1 or hhs_hcc251 =1 or G13 = 1 or G14 = 1)
+	hhs_hcc218 =1 or hhs_hcc223 =1 or hhs_hcc251 =1 or G13 = 1 or G14 = 1 or g24=1)
 and age_last >= 2
 
 update hcc_list set transplant_flag = 1 where 
 	(hhs_hcc018 = 1 or hhs_hcc034 =1 or hhs_hcc041 = 1
-or hhs_hcc158 = 1 or hhs_hcc183 = 1 or hhs_hcc251 =1 or g14 = 1)
+or hhs_hcc158 = 1 or hhs_hcc183 = 1 or hhs_hcc251 =1 or g14 = 1 or g24 = 1)
 and age_last >= 2
 --- count payment HCCs ---
 
@@ -3152,4 +3172,3 @@ sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.ef
 hc.exp_date)/30)
 from hcc_list hc
 group by grouping sets ((left(hc.hios,14), hc.metal, market),market)
-
