@@ -185,8 +185,8 @@ unpivot (diagnosis for claimnumber in ([DX1]     ,[DX2]      ,[DX3]      ,[DX4] 
 /***** map each member to allowable RXCs *****/
 			  if object_id('tempdb..#RXC_Mapping') is not null drop table #rxc_mapping
 			  create table #rxc_mapping
-			  (memberid varchar(10),
-			  rxc varchar(5))
+			  (memberid varchar(50),
+			  rxc varchar(10))
 insert into #rxc_mapping
 select distinct memberid, RXC from PharmacyClaims rx join NDC_RXC ndc
 on rx.NDC = ndc.NDC
