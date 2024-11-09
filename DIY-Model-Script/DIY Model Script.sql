@@ -3166,7 +3166,7 @@ drop table #riskscorepostCSR
 	  rs.risk_score *adj_factor rs_post_csr into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
 JOIN CSR_ADJ_FACTORS c on hc.csr = c.csr_code
-and model_year = @model_year
+and model_year = @benefit_year
 on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 order by mbr_id
