@@ -1,9 +1,6 @@
 use [riskadjustment]
-/****** Object:  Table [dbo].[RiskScoreFactors]    Script Date: 10/18/2024 1:52:39 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+if object_id('dbo.riskscorefactors')is not null
+	drop table riskscorefactors
 CREATE TABLE [dbo].[RiskScoreFactors](
 	[Model] [nvarchar](50) NULL,
 	[Variable] [nvarchar](50) NULL,
@@ -4071,5 +4068,7 @@ INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Sco
 INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Score_Formula], [Platinum_Level], [Gold_Level], [Silver_Level], [Bronze_Level], [Catastrophic_Level], [Model_Year]) VALUES (N'Child', N'ACF_01', N'Yes', 1.304, 1.263, 1.214, 1.161, 1.6, N'2026_NBPP_100524')
 INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Score_Formula], [Platinum_Level], [Gold_Level], [Silver_Level], [Bronze_Level], [Catastrophic_Level], [Model_Year]) VALUES (N'Adult', N'ACF_01', N'Yes', 2.678, 2.618, 2.553, 2.495, 2.493, N'2026_NBPP_100524')
 INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Score_Formula], [Platinum_Level], [Gold_Level], [Silver_Level], [Bronze_Level], [Catastrophic_Level], [Model_Year]) VALUES (N'Adult', N'G24', N'Yes', 7.002, 6.831, 6.765, 6.687, 6.672, N'2024_DIY_090624')
+INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Score_Formula], [Platinum_Level], [Gold_Level], [Silver_Level], [Bronze_Level], [Catastrophic_Level], [Model_Year]) VALUES (N'Adult', N'G24', N'Yes', 6.32, 6.253, 6.239, 6.228, 6.219, N'2025_NBPP_111623')
+INSERT [dbo].[RiskScoreFactors] ([Model], [Variable], [Variable_Used_in_Risk_Score_Formula], [Platinum_Level], [Gold_Level], [Silver_Level], [Bronze_Level], [Catastrophic_Level], [Model_Year]) VALUES (N'Adult', N'G24', N'Yes', 6.001, 6, 6.012, 6.016, 6.008, N'2026_NBPP_100524')
 GO
 
