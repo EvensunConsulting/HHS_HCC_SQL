@@ -40,16 +40,16 @@ memberuid,
 		  ,case when right(hios_ID, 2) = '06' then 1
 		  when right(hios_id,2) = '05' then 2
 		  when right(hios_id, 2) = '04' then 3
-		  when right(hios_id, 2) in ('00','01') then 0
+		  when right(hios_id, 2) in ('00','01') then 4
 		  when right(hios_id,2) = '02' and metallevel = 'bronze' then 7
 		  when right(hios_id, 2) = '02' and metallevel = 'silver' then 6
 		  when right(hios_id, 2) = '02' and metallevel = 'gold' then 5
-		  when right(hios_id,2) = '02' and metallevel = 'platinum' then 4
+		  when right(hios_id,2) = '02' and metallevel = 'platinum' then 12
 		  when right(hios_id,2) = '03' and metallevel = 'bronze' then 11
 		  when right(hios_id, 2) = '03' and metallevel = 'silver' then 10
 		  when right(hios_id, 2) = '03' and metallevel = 'gold' then 9
 		  when right(hios_id,2) = '03' and metallevel = 'platinum' then 8
-		  else 0 end CSR
+		  else 4 end CSR
 		  ,[Gender]
 		  ,[Market],state,
 		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
@@ -3207,4 +3207,3 @@ hc.exp_date)/30.00), sum(datediff(d, hc.eff_date,
 hc.exp_date)/30.00)
 from hcc_list hc
 group by grouping sets ((left(hc.hios,14), hc.metal, market, ratingarea),market)
-drop table hcc_unpivot
