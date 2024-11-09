@@ -1,11 +1,12 @@
-use riskadjustment --- change this to whatever database you are using
+--use riskadjustment --- change this to whatever database you are using
 declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. 
 declare @startdate date = '2023-01-01' -- should generally be January 1
 declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
 declare @paidthrough date = '2024-06-30' --- paid through date
 
 declare @state varchar(2) = 'NY'
-declare @market int = 4
+declare @market int = 1
+declare @droptemp bit = 1 --- set to 0 to retain temp tables at end. Useful for troubleshooting
 
 /***** End User Inputs; Do not edit below this line ******/
 
@@ -19,7 +20,7 @@ if @benefityear = 2025 set @model_year = '2025_NBPP_111623'
 if @benefityear = 2026 set @model_year = '2026_NBPP_100524'
 
 ----- Updates HCC List table from the Enrollment tables ----
-delete from hcc_list
+truncate table hcc_list
 
   insert into hcc_list
 	  (MBR_ID,
@@ -57,6 +58,8 @@ memberuid,
 	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
+  and market = @market
+
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
@@ -77,7 +80,8 @@ into #age_last
 select memberuid,benefit_year, FLOOR(DATEDIFF(DAY, dob, first_day) / 365.25) age_first
 into #age_first
   from #yearly_enrollment
- 
+
+
 
       if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
 select memberuid, datediff(d, first_day, last_day) enr_dur, benefit_year into #enrollment_duration from #yearly_enrollment
@@ -109,7 +113,8 @@ select memberuid, datediff(d, first_day, last_day) enr_dur, benefit_year into #e
 create table #AcceptableClaims
 (claimnumber varchar(50), 
 acceptable_reason varchar(50))
-
+CREATE NONCLUSTERED INDEX acceptable
+ON [dbo].[#AcceptableClaims] ([claimnumber])
 
 --- First insert inpatient claims where an allowable HCPCS isn't required
 insert into #acceptableclaims
@@ -181,7 +186,9 @@ unpivot (diagnosis for claimnumber in ([DX1]     ,[DX2]      ,[DX3]      ,[DX4] 
 	  and FLOOR(DATEDIFF(DAY, BirthDate, diag_dt))/365.25 between min_age_dgns_include and max_age_dgns_exclude and (CC_sex_split = 'X' or (gender = 'M' and cc_sex_split = 'male') or (gender = 'F' and cc_sex_split = 'female'))
 	  	  and FLOOR(DATEDIFF(DAY, BirthDate, diag_dt))/365.25 between cc_age_split_min_age_inc and cc_age_split_max_age_exc
 		  and acc_cd <> '0'
-
+		  CREATE NONCLUSTERED INDEX hcc_maP
+ON [dbo].[#MemberHCCMap] ([HCC])
+INCLUDE ([memberid])
 /***** map each member to allowable RXCs *****/
 			  if object_id('tempdb..#RXC_Mapping') is not null drop table #rxc_mapping
 			  create table #rxc_mapping
@@ -195,7 +202,8 @@ and PaidDate <= @paidthrough
 and deniedflag = 'A'
 union
 select distinct memberid, rxc from medicalclaims med join hcpcsrxc hcpcs on med.ServiceCode = hcpcs.hcpcs_code
-where (formtype = 'P' or billtype in ('111','117','731','737','131','137','711','717','761','767','771','777','851','857','871','877')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
+where (formtype = 'P' or billtype in
+('111','117','731','737','131','137','711','717','761','767','771','777','851','857','871','877','132')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
 and deniedflag = 'A'
 
@@ -1655,6 +1663,10 @@ RXC_09_X_HCC057 = 1
 where RXC_09 = 1 and HHS_HCC057 = 1
 
 update hcc_list
+set RXC_09_x_HCC056_057_and_048_041 = 1
+where rxc_09 = 1 and (HHS_HCC056 = 1 or HHS_HCC057 = 1) and (HHS_HCC048 = 1 or HHS_HCC041 = 1)
+
+update hcc_list
 set
 RXC_09_X_HCC048_041  = 1
 where RXC_09 = 1 and (HHS_HCC048 = 1 or HHS_HCC041 = 1)
@@ -1784,7 +1796,7 @@ update hcc_list set G18A =1, HHS_HCC207 =0, HHS_HCC208   = 0
 where  (HHS_HCC207 =1 or HHS_HCC208 = 1)
 and age_last >= 21
 
-if @benefityear >= 2023
+if @benefityear >= 2024
 begin
 update hcc_list set G24 = 1, hhs_hcc018 = 0, hhs_hcc183 = 0
 where (hhs_hcc183 = 1 or hhs_hcc018 = 1)
@@ -2258,6 +2270,7 @@ SELECT [MBR_ID]
       ,[G17A]
       ,[G18A]
       ,[G19B]
+	  ,[g24]
   FROM [dbo].[hcc_list]
 ) hc unpivot
 (val for hcc in (
@@ -2424,9 +2437,13 @@ SELECT [MBR_ID]
       ,[G17A]
       ,[G18A]
       ,[G19B]
+	  ,[G24]
       ) ) as unpvt
-
+	  CREATE NONCLUSTERED INDEX hcc_count
+ON [dbo].[#paymentHCCcount] ([val])
+INCLUDE ([mbr_id],[hcc])
 	  IF OBJECT_ID('TEMPDB..#hCC_COUNT') IS NOT NULL DROP TABLE #hCC_COUNT
+
 select mbr_id, count(distinct hcc) pmt_hcc_count INTO #hCC_COUNT from #paymenthcccount
 where val = 1
 group by mbr_id
@@ -2754,6 +2771,8 @@ SELECT [MBR_ID]
       ,[G17A]
       ,[G18A]
       ,[G19B]
+	  ,[g24]
+	  ,[acf_01]
       ,[INT_GROUP_H]
 	  ,[SEVERE_1_HCC]
       ,[SEVERE_2_HCC]
@@ -3024,6 +3043,8 @@ SELECT [MBR_ID]
       ,[G17A]
       ,[G18A]
       ,[G19B]
+	  ,[g24]
+	  ,[acf_01]
       ,[INT_GROUP_H]
 	  ,[SEVERE_1_HCC]
       ,[SEVERE_2_HCC]
@@ -3098,7 +3119,9 @@ SELECT [MBR_ID]
       ,[AGE1_X_SEVERITY4]
       ,[AGE1_X_SEVERITY3]
       ,[AGE1_X_SEVERITY2]
-      ,[AGE1_X_SEVERITY1]) ) as unpvt
+      ,[AGE1_X_SEVERITY1]
+	  
+	  ) ) as unpvt
 	  where val = 1
 
 	  if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null drop table #RiskscoreBYMemberPre_CSR
@@ -3107,7 +3130,10 @@ SELECT [MBR_ID]
 ****/
 	  --- adult model
 	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
-	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) risk_score, mbr_id, eff_date, exp_date into #RiskscoreBYMemberPre_CSR from #hcc_unpivot up join RiskScoreFactors rf
+	  when metal = 'gold' then val*gold_level when metal = 'platinum' 
+	  then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) 
+	  risk_score, mbr_id, eff_date, exp_date into #RiskscoreBYMemberPre_CSR from #hcc_unpivot up 
+	  join RiskScoreFactors rf
 	  on up.hcc = rf.variable
 	  where age_last >= '21'
 	  and model = 'Adult'
@@ -3131,10 +3157,16 @@ SELECT [MBR_ID]
 	  and model = 'Infant'
 	  and model_year = @model_year
 	  group by mbr_id, eff_date, exp_date
+if object_id('tempdb..#riskscorepostCSR') is not null 
+drop table #riskscorepostCSR
+
 
 --- take the risk score, then apply the CSR multiplier factors ----
-	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre, rs.risk_score * (case when csr in (1 ,2,6,10,12,13) then 1.12 when csr in (7,11) then 1.15 when csr in (5,9) then 1.07 else 1.00 end) rs_post_csr into #riskscorepostCSR
+	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre,
+	  rs.risk_score *adj_factor rs_post_csr into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
+JOIN CSR_ADJ_FACTORS c on hc.csr = c.csr_code
+and model_year = @model_year
 on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 order by mbr_id
@@ -3144,7 +3176,8 @@ update hc
 set risk_score = rs.rs_post_csr from
 hcc_list hc join #riskscorepostCSR rs on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
-
+if @droptemp = 1
+begin
 --- drop all the temp tables ----
 if object_id('tempdb..#AcceptableClaims') is not null		  
 drop table #AcceptableClaims	  
@@ -3162,13 +3195,16 @@ if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null
 drop table #RiskscoreBYMemberPre_CSR
 if object_id('tempdb..#riskscorepostCSR') is not null 
 drop table #riskscorepostCSR
-
+end
 
 
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
-select left(hc.hios,14), hc.metal, market, 
+select left(hc.hios,14), hc.metal, market, ratingarea,
 sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.eff_date,
 
-hc.exp_date)/30)
+hc.exp_date)/30.00), sum(datediff(d, hc.eff_date,
+
+hc.exp_date)/30.00)
 from hcc_list hc
-group by grouping sets ((left(hc.hios,14), hc.metal, market),market)
+group by grouping sets ((left(hc.hios,14), hc.metal, market, ratingarea),market)
+drop table hcc_unpivot
