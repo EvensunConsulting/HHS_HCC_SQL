@@ -119,14 +119,14 @@ ON [dbo].[#AcceptableClaims] ([claimnumber])
 --- First insert inpatient claims where an allowable HCPCS isn't required
 insert into #acceptableclaims
 select distinct claimnumber, 'BillTypeIP'
-from MedicalClaims where formtype = 'I' and  right(billtype,3) in ('111','117')
+from MedicalClaims where formtype = 'I' and  right(billtype,3) in ('111','117','112','113','114')
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
 --- outpatient with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'UBServiceCode'
 from MedicalClaims mc
-where formtype = 'I' and billtype in ('131','137','711','717','761','767','771','777','851','857','871','877','731','777')
+where formtype = 'I' and right(billtype,3) in ('131','137','711','717','761','767','771','777','851','852','853','854','857','871','877','731','732','733','777','132','133')
 and exists (select 1 from ServiceCodeReference scref where mc.ServiceCode = scref.SRVC_CD
 and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto))  between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
@@ -3166,7 +3166,7 @@ drop table #riskscorepostCSR
 	  rs.risk_score *adj_factor rs_post_csr into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
 JOIN CSR_ADJ_FACTORS c on hc.csr = c.csr_code
-and model_year = @benefit_year
+and model_year = @benefityear
 on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 order by mbr_id
