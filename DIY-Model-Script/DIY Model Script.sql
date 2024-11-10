@@ -135,10 +135,7 @@ and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto))  between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
-
-
-select distinct billtype from medicalclaims 
-
+	
 --- hcfa with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'HCFAServiceCode'
