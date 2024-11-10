@@ -50,6 +50,8 @@ memberuid,
 		  when right(hios_id, 2) = '03' and metallevel = 'gold' then 9
 		  when right(hios_id,2) = '03' and metallevel = 'platinum' then 8
 		  else 4 end CSR
+
+
 		  ,[Gender]
 		  ,[Market],state,
 		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
@@ -59,6 +61,7 @@ memberuid,
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
   and market = @market
+  and state = @state
 
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
@@ -102,9 +105,9 @@ select memberuid, datediff(d, first_day, last_day) enr_dur, benefit_year into #e
   join #age_first af on hc.MemberUID = af.MemberUID
 
     
-        if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
-    if object_id('tempdb..#age_last') is not null drop table #age_last
-  if object_id('tempdb..#yearly_enrollment') is not null drop table #yearly_enrollment
+drop table #enrollment_duration
+drop table #age_last
+drop table #yearly_enrollment
 
 
   /******* Filter claims to acceptable records, then create a mapping table for each member to HCC mapping. Apply age/sex filter logic as necessary ****/
@@ -126,12 +129,16 @@ and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom)
 insert into #acceptableclaims
 select distinct claimnumber, 'UBServiceCode'
 from MedicalClaims mc
-where formtype = 'I' and right(billtype,3) in ('131','137','711','717','761','767','771','777','851','852','853','854','857','871','877','731','732','733','777','132','133')
+where formtype = 'I' and left(right(billtype,3),2) in ('13','71','76','77','85','87','73')
 and exists (select 1 from ServiceCodeReference scref where mc.ServiceCode = scref.SRVC_CD
 and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto))  between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
+
+
+select distinct billtype from medicalclaims 
+
 --- hcfa with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'HCFAServiceCode'
@@ -200,12 +207,13 @@ on rx.NDC = ndc.NDC
 and FilledDate between @startdate and @enddate
 and PaidDate <= @paidthrough
 and deniedflag = 'A'
+
 union
 select distinct memberid, rxc from medicalclaims med join hcpcsrxc hcpcs on med.ServiceCode = hcpcs.hcpcs_code
-where (formtype = 'P' or billtype in
-('111','117','731','737','131','137','711','717','761','767','771','777','851','857','871','877','132')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
+where (formtype = 'P' or left(right(billtype,3),2) in ('11','13','71','76','77','85','87','73')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
 and deniedflag = 'A'
+
 
 
 /***** Update the member hcc table based on the records in the mapping tables ****/
@@ -3159,8 +3167,6 @@ SELECT [MBR_ID]
 	  group by mbr_id, eff_date, exp_date
 if object_id('tempdb..#riskscorepostCSR') is not null 
 drop table #riskscorepostCSR
-
-
 --- take the risk score, then apply the CSR multiplier factors ----
 	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre,
 	  rs.risk_score *adj_factor rs_post_csr into #riskscorepostCSR
@@ -3200,7 +3206,7 @@ end
 
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
 select left(hc.hios,14), hc.metal, market, ratingarea,
-sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30))/sum(datediff(d, hc.eff_date,
+sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30.00))/sum(datediff(d, hc.eff_date,
 
 hc.exp_date)/30.00), sum(datediff(d, hc.eff_date,
 
