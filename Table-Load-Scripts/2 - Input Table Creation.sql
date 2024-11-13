@@ -637,6 +637,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[AGE1_X_SEVERITY3] [int] NULL,
 	[AGE1_X_SEVERITY2] [int] NULL,
 	[AGE1_X_SEVERITY1] [int] NULL,
+	[member_months] as datediff(d,eff_date, exp_date)/30.00
 PRIMARY KEY CLUSTERED 
 (
 	[id] ASC
