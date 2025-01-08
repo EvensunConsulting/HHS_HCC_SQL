@@ -159,7 +159,7 @@ CREATE TABLE [dbo].[MedicalClaims](
 	[Modifier1] [varchar](2) NULL,
 	[Modifier2] [varchar](2) NULL,
 	[Modifier3] [varchar](2) NULL,
-	[units] float null
+	[units] float null,
 	[PlaceOfServiceCode] [varchar](2) NULL,
 	[DeniedFlag] [varchar](1) NULL,
 	[DX1] [varchar](10)  NULL,
