@@ -8,7 +8,8 @@ CREATE TABLE [dbo].[GCF](
 	[GCF] [float] NULL,
 	[Billable_Member_Months] [float] NULL,
 	[Year] [int] NULL,
-	[Market] [tinyint] NULL
+	[Market] [tinyint] NULL,
+	[rating_area_text]  AS (concat('R-',[state],right(concat('000',CONVERT([nvarchar](10),[rating_area])),(3))))
 ) ON [PRIMARY]
 INSERT [dbo].[GCF] ([State], [Rating_Area], [GCF], [Billable_Member_Months], [Year], [Market]) VALUES (N'AK', 1,0.97299998998642,87866.5,2019,1)
 INSERT [dbo].[GCF] ([State], [Rating_Area], [GCF], [Billable_Member_Months], [Year], [Market]) VALUES (N'AK', 2,1.02799999713898,81700.6015625,2019,1)
