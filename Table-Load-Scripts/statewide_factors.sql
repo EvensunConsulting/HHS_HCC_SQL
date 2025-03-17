@@ -26,7 +26,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 IF NOT EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[Statewide_Factor_sum]'))
 EXEC dbo.sp_executesql @statement = N'create view [dbo].[Statewide_Factor_sum] as 
-select plrs*idf*gcf firs, av*arf*gcf fers, RA_Adj_Avg_Pre, raf.year, raf.state, raf.market from qhp_puf..Statewide_RA_Factors raf join (
+select plrs*idf*gcf firs, av*arf*gcf fers, RA_Adj_Avg_Pre, raf.year, raf.state, 
+	raf.market from Statewide_RA_Factors raf join (
 select sum(billable_member_months*gcf)/sum(billable_member_months) gcf, state, year, market from gcf
 group by state, year, market
 ) gcf
