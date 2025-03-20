@@ -304,6 +304,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[silver_risk_score] [float] NULL,
 	[gold_risk_score] [float] NULL,
 	[platinum_risk_score] [float] NULL,
+	[silver_87_94_risk_score] float null,
 	[renewal_flag] [int] NULL,
 	[premium] [float] NULL,
 	[aptc_amount] float null,
@@ -1461,7 +1462,7 @@ GO
 ALTER TABLE [dbo].[hcc_list] ADD  DEFAULT ((0)) FOR [AGE1_X_SEVERITY1]
 GO
 
-
+drop 
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Supplemental]') AND type in (N'U'))
 DROP TABLE [dbo].[Supplemental]

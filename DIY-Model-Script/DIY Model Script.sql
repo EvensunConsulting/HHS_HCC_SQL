@@ -3186,12 +3186,15 @@ if object_id('tempdb..#riskscorepostCSR') is not null
 drop table #riskscorepostCSR
 --- take the risk score, then apply the CSR multiplier factors ----
 	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre,
-	  rs.risk_score *adj_factor rs_post_csr,
+	  rs.risk_score *c.adj_factor rs_post_csr,
 	  rs.bronze_risk_score, rs.silver_risk_score, rs.gold_risk_score, rs.platinum_risk_score, rs.catastrophic_risk_score
+	  ,rs.silver_risk_score*css.adj_factor silver_87_94_risk_score
 	  into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
 JOIN CSR_ADJ_FACTORS c on hc.csr = c.csr_code
-and model_year = @benefityear
+and c.model_year = @benefityear
+join csr_adj_factors css on css.model_year = @benefityear
+and css.CSR_Code = '2'
 on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 order by mbr_id
@@ -3203,7 +3206,8 @@ hc.bronze_risk_score = rs.bronze_risk_score,
 hc.silver_risk_score = rs.silver_risk_score,
 hc.gold_risk_score = rs.gold_risk_score,
 hc.platinum_risk_score = rs.platinum_risk_score,
-hc.catastrophic_risk_score = rs.catastrophic_risk_score
+hc.catastrophic_risk_score = rs.catastrophic_risk_score,
+hc.silver_87_94_risk_score = rs.silver_87_94_risk_score
 from
 hcc_list hc join #riskscorepostCSR rs on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
@@ -3230,12 +3234,15 @@ end
 
 if @output_table is not null
 begin
-if object_id(@output_table) is null
+if object_id(@output_table) is not null
 begin
-declare @errormessage nvarchar(4000) = 'The output table specified, '+@output_table+' already exists. Please drop this table or use another name. The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
+declare @errormessage nvarchar(4000) =
+'The output table specified, '+@output_table+' already exists. 
+Please drop this table or use another name. 
+The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
 throw 50005, @errormessage,1
 end 
-if object_id(@output_table) is not null
+if object_id(@output_table) is null
 exec('select * into '+@output_table+' from hcc_list')
 end
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
