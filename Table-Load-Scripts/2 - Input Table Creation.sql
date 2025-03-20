@@ -6,53 +6,50 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Enrol
 DROP TABLE [dbo].[Enrollment]
 GO
 
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
 CREATE TABLE [dbo].[Enrollment](
 	[RowNo] [int] IDENTITY(1,1) NOT NULL,
 	[MemberID] [varchar](50) NOT NULL,
 	[EDGE_MemberID] [varchar](50) NULL,
-	[MemberUID] varchar(100) null,
-	[SSN] varchar(9) null,
-	[PolicyID] varchar(50) null,
-	[CMSPolicyID] varchar(50) null,
-	[FirstName] varchar(100) null,
-	[LastName] varchar(100) null,
-	[Suffix] varchar(5) null,
+	[GroupID] [varchar](100) NULL,
+	[MemberUID] [varchar](100) NULL,
+	[SSN] [varchar](9) NULL,
+	[PolicyID] [varchar](50) NULL,
+	[CMSPolicyID] [varchar](50) NULL,
+	[FirstName] [varchar](100) NULL,
+	[LastName] [varchar](100) NULL,
+	[Suffix] [varchar](5) NULL,
 	[EffDat] [date] NOT NULL,
 	[Expdat] [date] NOT NULL,
 	[HIOS_ID] [varchar](16) NOT NULL,
 	[Premium] [float] NOT NULL,
-	[aptc] float null,
+	[aptc] [float] NULL,
 	[Gender] [varchar](1) NOT NULL,
 	[BirthDate] [date] NOT NULL,
 	[SubscriberFlag] [varchar](1) NOT NULL,
 	[SubscriberNumber] [varchar](50) NULL,
 	[MetalLevel] [varchar](12) NOT NULL,
-	[Relationship] [varchar](50) null,
+	[Relationship] [varchar](50) NULL,
 	[PaidThroughDate] [date] NULL,
 	[EPAI] [nvarchar](50) NULL,
-	[RatingArea] [varchar](10) NOT NULL,
+	[RatingArea] [varchar](10) NULL,
+	[County] [varchar](50) null, 
 	[State] [varchar](2) NOT NULL,
 	[Market] [varchar](1) NOT NULL,
 	[zip_code] [varchar](9) NULL,
-	[Race] [varchar](2) null,
-	[ethnicity] [varchar](2) null,
-	[aptc_flag] [varchar](1) null,
-	[statepremiumsubsidy_flag] [varchar](1) null,
-	[stateCSR_flag] [varchar](1) null,
-	[ichra_qsehra] [varchar](1) null,
-	[qsehra_spouse] [varchar](1) null,
-	[qsehra_medical] [varchar](1) null,
-	[BrokerNPN] varchar(15) null,
-	[BrokerName] varchar(100) null,
-	[CommissionPaid] float null,
-	[ExchangeSubscriberID] varchar(10) null,
-	[ExchangeMemberID] varchar(10) null,
+	[Race] [varchar](8) NULL,
+	[ethnicity] [varchar](5) NULL,
+	[aptc_flag] [varchar](1) NULL,
+	[statepremiumsubsidy_flag] [varchar](1) NULL,
+	[stateCSR_flag] [varchar](1) NULL,
+	[ichra_qsehra] [varchar](1) NULL,
+	[qsehra_spouse] [varchar](1) NULL,
+	[qsehra_medical] [varchar](1) NULL,
+	[BrokerNPN] [varchar](15) NULL,
+	[BrokerName] [varchar](100) NULL,
+	[CommissionPaid] [float] NULL,
+	[ExchangeSubscriberID] [varchar](10) NULL,
+	[ExchangeMemberID] [varchar](10) NULL,
+	[Group_number] [varchar](50) null,
 	[UDF_1] [varchar](500) NULL,
 	[UDF_2] [varchar](500) NULL,
 	[UDF_3] [varchar](500) NULL,
@@ -61,67 +58,39 @@ CREATE TABLE [dbo].[Enrollment](
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 
-ALTER TABLE [dbo].[Enrollment] ADD  CONSTRAINT [DF_Enrollment_SubscriberFlag]  DEFAULT ('N') FOR [SubscriberFlag]
+/****** Object:  Table [dbo].[GroupInfo]    Script Date: 3/17/2025 10:23:19 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Group]') AND type in (N'U'))
+DROP TABLE [dbo].[Groups]
 GO
 
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Identity' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'RowNo'
+/****** Object:  Table [dbo].[GroupInfo]    Script Date: 3/17/2025 10:23:19 AM ******/
+SET ANSI_NULLS ON
 GO
 
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Member ID (from ID Card)' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'MemberID'
+SET QUOTED_IDENTIFIER ON
 GO
 
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Member ID submitted to EDGE server' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'EDGE_MemberID'
+CREATE TABLE [dbo].[Groups](
+	[GroupID] [varchar](100) NOT NULL,
+	[GroupName] [varchar](100) NULL,
+	[GroupAddressLine1] [varchar](100) NULL,
+	[GroupAddressLine2] [varchar](100) NULL,
+	[GroupCity] [varchar](100) NULL,
+	[GroupState] [varchar](100) NULL,
+	[ZIP] [varchar](100) NULL,
+	[County] [varchar](100) NULL,
+	[ratingarea] nvarchar(10) null,
+	[GroupEffectiveDate] [date] NULL,
+	[GroupTerminationDate] [date] NULL,
+	[FTEcount] [varchar](100) NULL,
+	[NAICSCode] [varchar](100) NULL,
+	[EIN] [varchar](100) NULL
+) ON [PRIMARY]
 GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Start Date for coverage span' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'EffDat'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'End Date for Coverage Span' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'Expdat'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'16 Digit HIOS ID' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'HIOS_ID'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Monthly premium' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'Premium'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Gender (M, F, or U)' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'Gender'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Date of Birth' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'BirthDate'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Y = Subscriber, blank or N = not subscriber' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'SubscriberFlag'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'If subscriber flag <> Y, then subscriber identifier' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'SubscriberNumber'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Metal level: Bronze, Silver, Gold, Platinum, or Catastrophic' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'MetalLevel'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Date through which premium is paid' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'PaidThroughDate'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Enrollment Period Activity Indicator' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'EPAI'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Rating area without state code' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'RatingArea'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'2-digit state identifier' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'State'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Market identifier: 1 = individual, 2 = small group' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'Market'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'ZIP_code - use ZIP or ZIP+4; exclude hyphens' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'Enrollment', @level2type=N'COLUMN',@level2name=N'zip_code'
-GO
-
 
 
 /****** Object:  Table [dbo].[MedicalClaims]    Script Date: 1/3/2023 5:42:22 PM ******/
@@ -313,6 +282,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[qsehra_medical] [varchar](1) NULL,
 	[BrokerNPN] varchar(15) null,
 	[BrokerName] varchar(100) null,
+	[groupid] varchar(100) null,
 	[udf_1] [varchar](50) NULL,
 	[udf_2] [varchar](50) NULL,
 	[udf_3] [varchar](50) NULL,

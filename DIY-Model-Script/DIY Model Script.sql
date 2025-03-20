@@ -7,7 +7,7 @@ declare @paidthrough date = '2024-06-30' --- paid through date
 declare @state varchar(2) = 'NY'
 declare @market int = 1
 declare @droptemp bit = 1 --- set to 0 to retain temp tables at end. Useful for troubleshooting
-
+declare @output_table varchar(50) = 'hcc_list_032025'
 /***** End User Inputs; Do not edit below this line ******/
 
 declare @model_year varchar(50)
@@ -3200,7 +3200,11 @@ if object_id('tempdb..#riskscorepostCSR') is not null
 drop table #riskscorepostCSR
 end
 
+if @output_table is not null
+begin
 
+exec('select * into '+@output_table+' from hcc_list')
+end
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
 select left(hc.hios,14), hc.metal, market, ratingarea,
 sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30.00))/sum(datediff(d, hc.eff_date,
@@ -3210,3 +3214,4 @@ hc.exp_date)/30.00), sum(datediff(d, hc.eff_date,
 hc.exp_date)/30.00)
 from hcc_list hc
 group by grouping sets ((left(hc.hios,14), hc.metal, market, ratingarea),market)
+
