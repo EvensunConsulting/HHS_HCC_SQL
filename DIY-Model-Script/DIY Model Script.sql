@@ -1,8 +1,8 @@
 --use riskadjustment --- change this to whatever database you are using
-declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. 
-declare @startdate date = '2023-01-01' -- should generally be January 1
-declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
-declare @paidthrough date = '2024-06-30' --- paid through date
+declare @benefityear int = 2024 ---- set this value to the model year you want to run your data through. 
+declare @startdate date = '2024-01-01' -- should generally be January 1
+declare @enddate date = '2024-12-31' --- last date of incurred dates you want to use
+declare @paidthrough date = '2025-06-30' --- paid through date
 
 declare @state varchar(2) = 'NY'
 declare @market int = 1
@@ -29,7 +29,7 @@ truncate table hcc_list
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,
 	  edge_memberid,
 memberuid,
-	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions
+	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions, groupid
 	  )
 	  SELECT distinct [MemberID]
 		  ,case when effdat < @startdate then @startdate else effdat end effdat
@@ -57,7 +57,8 @@ memberuid,
 		  ratingarea, subscriberflag, subscribernumber, zip_code, race, ethnicity,
 	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, 
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,	  coalesce(memberuid, edge_memberid, memberid),
-	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid
+	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid,
+		  groupid
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
   and market = @market
@@ -3136,8 +3137,14 @@ SELECT [MBR_ID]
 	  --- adult model
 	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
 	  when metal = 'gold' then val*gold_level when metal = 'platinum' 
-	  then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) 
-	  risk_score, mbr_id, eff_date, exp_date into #RiskscoreBYMemberPre_CSR from #hcc_unpivot up 
+	  then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) ,
+	  risk_score,
+	  sum(val*bronze_level) bronze_risk_score,
+	  sum(val*silver_level) silver_risk_score,
+	  sum(val*gold_level) gold_risk_score,
+	  sum(val*platinum_level) platinum_risk_score,
+	  sum(val*catastrophic_level) catastrophic_risk_score,
+	  mbr_id, eff_date, exp_date into #RiskscoreBYMemberPre_CSR from #hcc_unpivot up 
 	  join RiskScoreFactors rf
 	  on up.hcc = rf.variable
 	  where age_last >= '21'
@@ -3147,7 +3154,13 @@ SELECT [MBR_ID]
 	  union
 	  --- child model
 	  	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
-	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end), mbr_id, eff_date, exp_date from #hcc_unpivot up join RiskScoreFactors rf
+	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end), 
+	  sum(val*bronze_level) bronze_risk_score,
+	  sum(val*silver_level) silver_risk_score,
+	  sum(val*gold_level) gold_risk_score,
+	  sum(val*platinum_level) platinum_risk_score,
+	  sum(val*catastrophic_level) catastrophic_risk_score,
+	  mbr_id, eff_date, exp_date from #hcc_unpivot up join RiskScoreFactors rf
 	  on up.hcc = rf.variable
 	  where age_last between '2' and '20'
 	  and model = 'Child'
@@ -3156,7 +3169,14 @@ SELECT [MBR_ID]
 	  --- infant model
 	  union
 	  	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
-	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) risk_score, mbr_id, eff_date, exp_date  from #hcc_unpivot up join RiskScoreFactors rf
+	  when metal = 'gold' then val*gold_level when metal = 'platinum' then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) risk_score
+	  	  ,
+	  sum(val*bronze_level) bronze_risk_score,
+	  sum(val*silver_level) silver_risk_score,
+	  sum(val*gold_level) gold_risk_score,
+	  sum(val*platinum_level) platinum_risk_score,
+	  sum(val*catastrophic_level) catastrophic_risk_score
+	  , mbr_id, eff_date, exp_date  from #hcc_unpivot up join RiskScoreFactors rf
 	  on up.hcc = rf.variable
 	  where age_last between '0' and '1'
 	  and model = 'Infant'
@@ -3166,7 +3186,9 @@ if object_id('tempdb..#riskscorepostCSR') is not null
 drop table #riskscorepostCSR
 --- take the risk score, then apply the CSR multiplier factors ----
 	  select hc.mbr_id, hios, metal, rs.EFF_DATE, rs.EXP_DATE, rs.risk_score rs_pre,
-	  rs.risk_score *adj_factor rs_post_csr into #riskscorepostCSR
+	  rs.risk_score *adj_factor rs_post_csr,
+	  rs.bronze_risk_score, rs.silver_risk_score, rs.gold_risk_score, rs.platinum_risk_score, rs.catastrophic_risk_score
+	  into #riskscorepostCSR
 from #RiskscoreBYMemberPre_CSR rs join hcc_list hc
 JOIN CSR_ADJ_FACTORS c on hc.csr = c.csr_code
 and model_year = @benefityear
@@ -3176,7 +3198,13 @@ order by mbr_id
 
 --- update the hcc_list table ----
 update hc
-set risk_score = rs.rs_post_csr from
+set risk_score = rs.rs_post_csr,
+hc.bronze_risk_score = rs.bronze_risk_score,
+hc.silver_risk_score = rs.silver_risk_score,
+hc.gold_risk_score = rs.gold_risk_score,
+hc.platinum_risk_score = rs.platinum_risk_score,
+hc.catastrophic_risk_score = rs.catastrophic_risk_score
+from
 hcc_list hc join #riskscorepostCSR rs on rs.mbr_id = hc.mbr_id
 and rs.EFF_DATE = hc.EFF_DATE and rs.EXP_DATE = hc.EXP_DATE
 if @droptemp = 1
