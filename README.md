@@ -1,6 +1,6 @@
 # HHS HCC SQL Risk Score Model
 
-This package was developed based on the CMS/HHS Published DIY SAS model for the HHS-HCC risk adjustment program, published at https://www.cms.gov/cciio/resources/regulations-and-guidance#Health%20Market%20Reforms. The current version was based on the DIY model published August 22, 2023, relying on the “instructions” [^1] and “technical details” [^2]. We have made our best efforts to replicate the logic found in the CMS-published SAS algorithm in T-SQL assuming a Microsoft SQL Server environment. For benefit years where HHS has not yet issued a DIY model (currently 2024), the most recently published coefficients found in rulemaking was used [^3]. 
+This package was developed based on the CMS/HHS Published DIY SAS model for the HHS-HCC risk adjustment program, published at https://www.cms.gov/cciio/resources/regulations-and-guidance#Health%20Market%20Reforms. The current version was based on the DIY model published January 7, 2025, relying on the “instructions” [^1] and “technical details” [^2]. We have made our best efforts to replicate the logic found in the CMS-published SAS algorithm in T-SQL assuming a Microsoft SQL Server environment. For benefit years where HHS has not yet issued a DIY model , the most recently published coefficients found in rulemaking were used. 
 
 Although this model has been tested and found to be consistent with the HHS SAS model and with EDGE server business rules and logic, it is offered AS IS with no warranty, express, implied or otherwise. The user assumes any and all risks associated with using this model, including potential risks to your data; it is HIGHLY recommended that you use a database dedicated to deploying this model, as the table creation scripts drops and recreates tables throughout. If you happen to have had a table named in the same way as this model named it, you could experience data loss. 
 
@@ -11,8 +11,7 @@ This package assumes a basic understanding of T-SQL; we do not provide technical
 ### KNOWN LIMITATIONS
 
 1.	This model does not currently account for billable vs. non-billable member months in calculating PLRS by plan HIOS ID.
-2.	This model requires you to split enrollment periods that cross plan years before inserting eligibility data.
-3.	This model only applies basic selection logic concerning eligibility and service code inclusion criteria when determining claims eligibility. It does not apply other edits that may lead to claim exclusion in the EDGE server. Refer to the EDGE Server business rules published on https://regtap.cms.gov for more robust exclusion logic and to troubleshoot differences between this model and EDGE server results.
+2.	This model only applies basic selection logic concerning eligibility and service code inclusion criteria when determining claims eligibility. It does not apply other edits that may lead to claim exclusion in the EDGE server, such as duplication logic. Refer to the EDGE Server business rules published on https://regtap.cms.gov for more robust exclusion logic and to troubleshoot differences between this model and EDGE server results.
 
 ### INSTRUCTIONS
 
@@ -24,7 +23,7 @@ Note all input tables have a rowno primary key column; do not insert into this c
 
 ##### Enrollment
 You must populate all fields in this table other than the EPAI field, paid through date field, EDGE_MemberID field, user defined fields, and the ZIP, Race, Ethnicity, Subsidy, and ICHRA/QSEHRA indicators. These fields are not currently used in the model but can be used for your convenience in comparing these results to data in your EDGE server or for aggregating / analyzing data. Note the following:
-- As noted above in the limitations section of this document, if an enrollment span crosses plan years, you must split it into two separate plan years. This should only affect small group membership. 
+- If an enrollment span crosses plan years, you must split it into two separate plan years. This should only affect small group membership. 
 - The premium, subscriber number and subscriber flag can be populated with placeholder values if you are not using them as they do not currently affect the model.
 - Populate the full 16-digit HIOS ID (including CSR Variant) in the HIOS_ID field. If unknown, populate with a dummy value ending in 00. This will result in no CSR induced demand adjustment being applied to eligibility records.
 - Metal levels should be populated with one of the following values: Bronze, Silver, Gold, Platinum, or Catastrophic. 
@@ -57,7 +56,6 @@ If you have found this useful, please share it. If you have found bugs, please s
 Wesley Sanders
 wesley@evensun.co
 
-[^1]: https://www.cms.gov/files/document/cy2023-diy-instructions-08222023.pdf
-[^2]: https://www.cms.gov/files/document/cy2023-diy-tables-08172023.xlsx
-[^3]: 2024 Source: https://www.cms.gov/files/document/cms-9899-p-patient-protection-nprm.pdf, pp. 54-70.
+[^1]: [https://www.cms.gov/files/document/cy2024-diy-instructions-01072025.pdf]
+[^2]: https://www.cms.gov/files/document/cy2024-diy-tables-1072025.xlsx
 
