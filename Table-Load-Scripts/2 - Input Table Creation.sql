@@ -63,7 +63,7 @@ CREATE TABLE [dbo].[Enrollment](
 GO
 
 /****** Object:  Table [dbo].[GroupInfo]    Script Date: 3/17/2025 10:23:19 AM ******/
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Group]') AND type in (N'U'))
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Groups]') AND type in (N'U'))
 DROP TABLE [dbo].[Groups]
 GO
 
@@ -1461,8 +1461,6 @@ GO
 
 ALTER TABLE [dbo].[hcc_list] ADD  DEFAULT ((0)) FOR [AGE1_X_SEVERITY1]
 GO
-
-drop 
 
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Supplemental]') AND type in (N'U'))
 DROP TABLE [dbo].[Supplemental]
