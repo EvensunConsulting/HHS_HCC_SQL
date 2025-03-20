@@ -3130,14 +3130,14 @@ SELECT [MBR_ID]
 	  ) ) as unpvt
 	  where val = 1
 
-	  if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null drop table #RiskscoreBYMemberPre_CSR
+	 if object_id('tempdb..#RiskscoreBYMemberPre_CSR') is not null drop table #RiskscoreBYMemberPre_CSR
 
 /*** calculate risk score by multiplying the value columns by the risk score factors from the risk score factors table based on the member's metal level. Model year variable set at the beginning uses the version populated in the risk score table. When importing new risk score coefficients, need to update the model year variable to the name imported in the model year column
 ****/
 	  --- adult model
 	  select sum(case when metal = 'bronze' then val*bronze_level when metal = 'silver' then val*silver_level
 	  when metal = 'gold' then val*gold_level when metal = 'platinum' 
-	  then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) ,
+	  then val*platinum_level when metal = 'catastrophic' then val*catastrophic_level else 0 end) 
 	  risk_score,
 	  sum(val*bronze_level) bronze_risk_score,
 	  sum(val*silver_level) silver_risk_score,
@@ -3230,7 +3230,12 @@ end
 
 if @output_table is not null
 begin
-
+if object_id(@output_table) is null
+begin
+declare @errormessage nvarchar(4000) = 'The output table specified, '+@output_table+' already exists. Please drop this table or use another name. The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
+throw 50005, @errormessage,1
+end 
+if object_id(@output_table) is not null
 exec('select * into '+@output_table+' from hcc_list')
 end
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
