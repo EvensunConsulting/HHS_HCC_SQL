@@ -1,15 +1,26 @@
 --use riskadjustment --- change this to whatever database you are using
-declare @benefityear int = 2024 ---- set this value to the model year you want to run your data through. 
-declare @startdate date = '2024-01-01' -- should generally be January 1
-declare @enddate date = '2024-12-31' --- last date of incurred dates you want to use
+declare @benefityear int = 2022 ---- set this value to the model year you want to run your data through. 
+declare @startdate date = '2022-01-01' -- should generally be January 1
+declare @enddate date = '2022-12-31' --- last date of incurred dates you want to use
 declare @paidthrough date = '2025-06-30' --- paid through date
 
 declare @state varchar(2) = 'NY'
 declare @market int = 1
 declare @droptemp bit = 1 --- set to 0 to retain temp tables at end. Useful for troubleshooting
-declare @output_table varchar(50) = 'hcc_list_032025'
+declare @output_table varchar(50) = 'hcc_list_2022'
 /***** End User Inputs; Do not edit below this line ******/
 
+
+if @output_table is not null
+begin
+if object_id(@output_table) is not null
+begin
+declare @errormessage nvarchar(4000) =
+'The output table specified, '+@output_table+' already exists. 
+Please drop this table or use another name. 
+The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
+throw 50005, @errormessage,1
+end 
 declare @model_year varchar(50)
 if @benefityear = 2020 set @model_year = '2020_DIY_080320'
 if @benefityear = 2021 set @model_year = '2021_DIY_033122'
@@ -29,7 +40,7 @@ truncate table hcc_list
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,
 	  edge_memberid,
 memberuid,
-	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions, groupid
+	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions, groupid, premium
 	  )
 	  SELECT distinct [MemberID]
 		  ,case when effdat < @startdate then @startdate else effdat end effdat
@@ -58,7 +69,7 @@ memberuid,
 	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, 
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,	  coalesce(memberuid, edge_memberid, memberid),
 	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid,
-		  groupid
+		  groupid, premium
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
   and market = @market
@@ -3232,16 +3243,6 @@ if object_id('tempdb..#riskscorepostCSR') is not null
 drop table #riskscorepostCSR
 end
 
-if @output_table is not null
-begin
-if object_id(@output_table) is not null
-begin
-declare @errormessage nvarchar(4000) =
-'The output table specified, '+@output_table+' already exists. 
-Please drop this table or use another name. 
-The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
-throw 50005, @errormessage,1
-end 
 if object_id(@output_table) is null
 exec('select * into '+@output_table+' from hcc_list')
 end
