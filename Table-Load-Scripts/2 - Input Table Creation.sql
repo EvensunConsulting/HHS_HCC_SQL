@@ -55,6 +55,7 @@ CREATE TABLE [dbo].[Enrollment](
 	[UDF_3] [varchar](500) NULL,
 	[UDF_4] [varchar](500) NULL,
 	[UDF_5] [varchar](500) NULL,
+	issuer_hios as left(hios_id,5)
  CONSTRAINT [PK_Enrollment] PRIMARY KEY CLUSTERED 
 (
 	[RowNo] ASC
@@ -88,7 +89,8 @@ CREATE TABLE [dbo].[Groups](
 	[GroupTerminationDate] [date] NULL,
 	[FTEcount] [varchar](100) NULL,
 	[NAICSCode] [varchar](100) NULL,
-	[EIN] [varchar](100) NULL
+	[EIN] [varchar](100) NULL,
+	[issuer_hios] varchar(5) null
 ) ON [PRIMARY]
 GO
 
@@ -109,6 +111,7 @@ CREATE TABLE [dbo].[MedicalClaims](
 	[RowNo] [int] IDENTITY(1,1) NOT NULL,
 	[MemberID] [varchar](50) NOT NULL,
 	[edge_memberID] [varchar](100) NULL,
+	[issuer_hios] varchar(5) null,
 	[ClaimNumber] [varchar](50) NOT NULL,
 	[edge_claimnumber] varchar(100) null,
 	[LineNumber] [int] NOT NULL,
@@ -200,6 +203,8 @@ GO
 CREATE TABLE [dbo].[PharmacyClaims](
 	[RowNo] [int] IDENTITY(1,1) NOT NULL,
 	[MemberID] [varchar](50) NOT NULL,
+		[edge_memberID] [varchar](100) NULL,
+		[issuer_hios] varchar(5) null,
 	[ClaimNumber] [varchar](50) NOT NULL,
 	[edgeclaimnumber] [varchar](100) null,
 	[NDC] [varchar](20) NOT NULL,
@@ -265,6 +270,7 @@ CREATE TABLE [dbo].[hcc_list](
 	[EXP_DATE] [date] NULL,
 	[METAL] [varchar](12) NULL,
 	[HIOS] [varchar](16) NULL,
+	[issuer_hios] [varchar](5) null,
 	[CSR] [int] NULL,
 	[DOB] [date] NULL,
 	[SEX] [varchar](1) NULL,
@@ -1475,6 +1481,7 @@ CREATE TABLE [dbo].[Supplemental](
 	recordsource varchar(2) null,
 	edgesupplementalidentifier varchar(100) null,
 	RecordVendor varchar(100) null,
+	[issuer_hios] [varchar](5) null,
 	[udf1] varchar(100) null,
 	[udf2] varchar(100) null
  CONSTRAINT [PK_Supplemental] PRIMARY KEY CLUSTERED 

@@ -1,26 +1,19 @@
 --use riskadjustment --- change this to whatever database you are using
-declare @benefityear int = 2022 ---- set this value to the model year you want to run your data through. 
-declare @startdate date = '2022-01-01' -- should generally be January 1
-declare @enddate date = '2022-12-31' --- last date of incurred dates you want to use
+declare @benefityear int = 2024 ---- set this value to the model year you want to run your data through. Does not need to align with
+declare @startdate date = '2024-01-01' -- should generally be January 1
+declare @enddate date = '2024-12-31' --- last date of incurred dates you want to use
 declare @paidthrough date = '2025-06-30' --- paid through date
 
 declare @state varchar(2) = 'NY'
-declare @market int = 1
+declare @market int = 1 --- leave null to ignore 
 declare @droptemp bit = 1 --- set to 0 to retain temp tables at end. Useful for troubleshooting
-declare @output_table varchar(50) = 'hcc_list_2022'
+declare @issuer_hios varchar(5) = '99999' -- leave null to ignore and treat all records as part of same HIOS
+declare @output_table varchar(50) = 'hcc_list' --- set this to the name of the table you want the output set to be saved to.
+declare @drop_existing bit = 0
+/* set to 1 to delete the output table if it exists. If set to 0, script will still run and produce results to the hcc_list
+table but will not drop the existing output_table specified above and will throw an error */
 /***** End User Inputs; Do not edit below this line ******/
 
-
-if @output_table is not null
-begin
-if object_id(@output_table) is not null
-begin
-declare @errormessage nvarchar(4000) =
-'The output table specified, '+@output_table+' already exists. 
-Please drop this table or use another name. 
-The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
-throw 50005, @errormessage,1
-end 
 declare @model_year varchar(50)
 if @benefityear = 2020 set @model_year = '2020_DIY_080320'
 if @benefityear = 2021 set @model_year = '2021_DIY_033122'
@@ -40,7 +33,9 @@ truncate table hcc_list
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,
 	  edge_memberid,
 memberuid,
-	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions, groupid, premium
+	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissions, groupid,
+	  premium,
+	  issuer_hios
 	  )
 	  SELECT distinct [MemberID]
 		  ,case when effdat < @startdate then @startdate else effdat end effdat
@@ -69,11 +64,14 @@ memberuid,
 	  aptc_flag, statepremiumsubsidy_flag, statecsr_flag, ichra_qsehra, qsehra_spouse, 
 	  qsehra_medical, udf_1, udf_2, udf_3, udf_4, udf_5,edge_memberid,	  coalesce(memberuid, edge_memberid, memberid),
 	  	  ssn, cmspolicyid, firstname, lastname, suffix,brokernpn, brokername, commissionpaid,
-		  groupid, premium
+		  groupid,
+		  premium,
+		  issuer_hios
 	  FROM [Enrollment]
   where effdat <= @enddate and expdat >= @startdate
   and market = @market
   and state = @state
+ and (@issuer_hios is null or issuer_hios = @issuer_hios)
 
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
@@ -132,11 +130,13 @@ CREATE NONCLUSTERED INDEX acceptable
 ON [dbo].[#AcceptableClaims] ([claimnumber])
 
 --- First insert inpatient claims where an allowable HCPCS isn't required
+
 insert into #acceptableclaims
 select distinct claimnumber, 'BillTypeIP'
 from MedicalClaims where formtype = 'I' and  right(billtype,3) in ('111','117','112','113','114')
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
+and (@issuer_hios is null or issuer_hios = @issuer_hios)
 --- outpatient with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'UBServiceCode'
@@ -147,7 +147,7 @@ and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto))  between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
-	
+	and (@issuer_hios is null or issuer_hios = @issuer_hios)
 --- hcfa with acceptable servicecode
 insert into #acceptableclaims
 select distinct claimnumber, 'HCFAServiceCode'
@@ -158,6 +158,7 @@ and scref.CPT_HCPCSELGBL_RISKADJSTMT_IND = 'Y'
 and (coalesce(LineServiceDateFrom, statementfrom, lineservicedateto, statementto)) between scref.SRVC_CD_EFCTV_strt_DT and scref.SRVC_CD_EFCTV_END_DT)
 and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
+and (@issuer_hios is null or issuer_hios = @issuer_hios)
 --- joins acceptable claims to diagnosis codes and creates a list of member IDs and diagnoses
 
 delete from #AcceptableClaims where claimnumber not in (select claimnumber from medicalclaims where deniedflag = 'A')
@@ -174,11 +175,14 @@ unpivot (diagnosis for claimnumber in ([DX1]     ,[DX2]      ,[DX3]      ,[DX4] 
 	  ----- Add and Delete Supplemental Diagnoses ----
 	  delete from #memberMapSvcDt 
 	  where exists (select 1 from Supplemental supp where #memberMapSvcDt.clmno = supp.ClaimNumber
-	  and #memberMapSvcDt.diagnosis = supp.DX and supp.AddDeleteFlag = 'D')
+	  and #memberMapSvcDt.diagnosis = supp.DX and supp.AddDeleteFlag = 'D'
+	  and (@issuer_hios is null or supp.issuer_hios = @issuer_hios)
+	  )
+
 	  insert into #memberMapSvcDt
 	  select distinct MemberID, supp.dx, clm.ClaimNumber, coalesce(lineservicedateto, lineservicedatefrom, statementto) from medicalclaims clm join #acceptableclaims accept on clm.ClaimNumber = accept.claimnumber join Supplemental supp on clm.ClaimNumber = supp.ClaimNumber
 	  where AddDeleteFlag = 'A'
-
+	  and (@issuer_hios is null or supp.issuer_hios = @issuer_hios)
 
 	  if object_id('tempdb..#MemberDiagnosisMap') is not null drop table #MemberDiagnosisMap
 	  select memberid, diagnosis, min(svc_dt) diag_dt 
@@ -216,13 +220,13 @@ on rx.NDC = ndc.NDC
 and FilledDate between @startdate and @enddate
 and PaidDate <= @paidthrough
 and deniedflag = 'A'
-
+and (@issuer_hios is null or issuer_hios = @issuer_hios)
 union
 select distinct memberid, rxc from medicalclaims med join hcpcsrxc hcpcs on med.ServiceCode = hcpcs.hcpcs_code
 where (formtype = 'P' or left(right(billtype,3),2) in ('11','13','71','76','77','85','87','73')) and coalesce(lineservicedateto, statementto, LineServiceDateFrom, statementfrom) between
 @startdate and @enddate and paiddate <= @paidthrough
 and deniedflag = 'A'
-
+and (@issuer_hios is null or issuer_hios = @issuer_hios)
 
 
 /***** Update the member hcc table based on the records in the mapping tables ****/
@@ -3243,10 +3247,28 @@ if object_id('tempdb..#riskscorepostCSR') is not null
 drop table #riskscorepostCSR
 end
 
+if @output_table is not null
+begin
+if @output_table = 'hcc_list' goto EndCode
+if object_id(@output_table) is not null
+and @drop_existing = 0
+begin
+declare @errormessage nvarchar(4000) =
+'The output table specified, '+@output_table+' already exists. 
+Please drop this table or use another name. 
+The script ran successfully other than this issue and the results have still been populated to the hcc_list table.';
+throw 50005, @errormessage,1
+end 
 if object_id(@output_table) is null
 exec('select * into '+@output_table+' from hcc_list')
+if object_id(@output_table) is not null and @drop_existing = 1
+begin
+exec ('drop table '+@output_table+'')
+exec('select * into '+@output_table+' from hcc_list')
+end
 end
 ----- End Model Code. Use the HCC_List table to query your risk scores -----
+EndCode:
 select left(hc.hios,14), hc.metal, market, ratingarea,
 sum(risk_score*(datediff(d, hc.eff_date, hc.exp_date)/30.00))/sum(datediff(d, hc.eff_date,
 
