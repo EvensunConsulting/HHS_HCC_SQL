@@ -73,6 +73,8 @@ memberuid,
   and state = @state
  and (@issuer_hios is null or issuer_hios = @issuer_hios)
 
+	--- if memberuid is blank (rather than null), update with memberid
+	update memberuid = memberid where memberuid = ''
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
@@ -97,8 +99,8 @@ into #age_first
 
 
       if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
-select memberuid, datediff(d, first_day, last_day) enr_dur, benefit_year into #enrollment_duration from #yearly_enrollment
-
+select memberuid, sum(datediff(d, eff_date, exp_date)) enr_dur, year(exp_date) benefit_year into #enrollment_duration from #yearly_enrollment
+group by memberuid, year(exp_date)
 
 
   ----- determine enrollment duration for the given calendar year ----
