@@ -1042,7 +1042,7 @@ INSERT [dbo].[Statewide_RA_Factors] ([State], [RA_Adj_Avg_Pre], [Avg_pre], [PLRS
 INSERT [dbo].[Statewide_RA_Factors] ([State], [RA_Adj_Avg_Pre], [Avg_pre], [PLRS], [ARF], [AV], [IDF], [MM], [Market], [Year]) VALUES (N'ME', 568.419251791032, 660.952618361665, 1.07889469027507, 1.66227596302259, 0.68300855769207, 1.02867284436204, 1291761.83333333, N'4', 2024)
 GO
 CREATE OR ALTER view [dbo].[Statewide_Factor_sum] as 
-select plrs*idf*gcf firs, av*arf*gcf fers, RA_Adj_Avg_Pre, raf.year, raf.state, raf.market from Statewide_RA_Factors raf join (
+select plrs*idf*gcf firs, av*arf*gcf*idf fers, RA_Adj_Avg_Pre, raf.year, raf.state, raf.market from Statewide_RA_Factors raf join (
 select sum(billable_member_months*gcf)/sum(billable_member_months) gcf, state, year, market from gcf
 group by state, year, market
 ) gcf
