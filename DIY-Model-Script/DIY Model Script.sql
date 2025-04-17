@@ -1,7 +1,7 @@
 --use riskadjustment --- change this to whatever database you are using
-declare @benefityear int = 2024 ---- set this value to the model year you want to run your data through. Does not need to align with
-declare @startdate date = '2024-01-01' -- should generally be January 1
-declare @enddate date = '2024-12-31' --- last date of incurred dates you want to use
+declare @benefityear int = 2023 ---- set this value to the model year you want to run your data through. Does not need to align with
+declare @startdate date = '2023-01-01' -- should generally be January 1
+declare @enddate date = '2023-12-31' --- last date of incurred dates you want to use
 declare @paidthrough date = '2025-06-30' --- paid through date
 
 declare @state varchar(2) = 'NY'
@@ -74,7 +74,7 @@ memberuid,
  and (@issuer_hios is null or issuer_hios = @issuer_hios)
 
 	--- if memberuid is blank (rather than null), update with memberid
-	update memberuid = memberid where memberuid = ''
+	update hcc_list set memberuid= mbr_id where memberuid = ''
 
   ---- aggregates enrollment for a member across the whole year so that the EDF and age at diagnosis are accurate if there are multiple enrollment spans ----
 
@@ -99,7 +99,7 @@ into #age_first
 
 
       if object_id('tempdb..#enrollment_duration') is not null drop table #enrollment_duration
-select memberuid, sum(datediff(d, eff_date, exp_date)) enr_dur, year(exp_date) benefit_year into #enrollment_duration from #yearly_enrollment
+select memberuid, sum(datediff(d, eff_date, exp_date)) enr_dur, year(exp_date) benefit_year into #enrollment_duration from hcc_list
 group by memberuid, year(exp_date)
 
 
