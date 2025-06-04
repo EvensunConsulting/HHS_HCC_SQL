@@ -15,6 +15,16 @@ table but will not drop the existing output_table specified above and will throw
 /***** End User Inputs; Do not edit below this line ******/
 
 declare @model_year varchar(50)
+	
+if @benefityear = 2020 set @model_year = '2016_DIY_121916'
+if @benefityear = 2020 set @model_year = '2017_DIY_071217'
+if @benefityear = 2020 set @model_year = '2017_DIY_112717'
+if @benefityear = 2020 set @model_year = '2018_DIY_040419'
+if @benefityear = 2020 set @model_year = '2018_DIY_040618'
+if @benefityear = 2020 set @model_year = '2018_DIY_120418'
+if @benefityear = 2020 set @model_year = '2019_DIY_011720'
+if @benefityear = 2020 set @model_year = '2019_DIY_041520'
+if @benefityear = 2020 set @model_year = '2019_DIY_071619'
 if @benefityear = 2020 set @model_year = '2020_DIY_080320'
 if @benefityear = 2021 set @model_year = '2021_DIY_033122'
 if @benefityear = 2022 set @model_year = '2022_DIY_122022'
